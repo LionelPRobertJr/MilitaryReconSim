@@ -1,0 +1,23 @@
+{
+  "deploymentVersion": "demo-1",
+  "phase": "pilot",
+  "configFile": "config/study2/recon-config-pilot-1.json",
+  "studyId": "study2-demo",
+  "assignEndpoint": "",
+  "uploadEndpoint": "",
+  "platform": {
+    "completionUrl": "",
+    "completionCode": "LOCALTEST",
+    "platformName": "the study website"
+  },
+  "payment": {
+    "currency": "$",
+    "basePayment": "the amount shown on the study page",
+    "bonusPerPoint": 0.001,
+    "bonusCap": 2
+  },
+  "minWindow": {
+    "width": 1280,
+    "height": 720
+  }
+}

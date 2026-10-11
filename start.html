@@ -1,0 +1,73 @@
+<title>Route Reconnaissance Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Start page for the co-author demo: pick a training condition and where to start. Layout: one column of four
+   condition rows, each with three start buttons; the mission-only start is the primary one. */
+:root {
+  --bg: #eef1e8; --surface: #f8f8f3; --ink: #26332c; --muted: #5d6a62; --rule: #d3dacf; --accent: #2f5a45; --accent-ink: #f4f2ea;
+  --tag: #8a6a1f; --tag-bg: #f1ead4;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151a17; --surface: #1d2420; --ink: #e3e9e1; --muted: #a3b0a7; --rule: #34403a; --accent: #7cc39b; --accent-ink: #10201a;
+  --tag: #e0c27a; --tag-bg: #2b2616; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #151a17; --surface: #1d2420; --ink: #e3e9e1; --muted: #a3b0a7; --rule: #34403a; --accent: #7cc39b; --accent-ink: #10201a;
+  --tag: #e0c27a; --tag-bg: #2b2616; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); padding-inline: 16px; padding-block: 40px 56px; }
+.wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 22px; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tag); }
+h1 { font-size: clamp(26px, 4vw, 34px); line-height: 1.15; margin: 6px 0 0; text-wrap: balance; }
+.lede { max-width: 62ch; color: var(--ink); margin: 0; }
+.note { max-width: 62ch; color: var(--muted); font-size: 14px; margin: 0; }
+.conds { display: grid; gap: 12px; }
+.cond { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 20px; align-items: center; }
+.cond h2 { margin: 0; font-size: 17px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.cond h2 span { font: 500 12px/1 var(--mono); color: var(--tag); background: var(--tag-bg); padding: 4px 7px; border-radius: 4px; letter-spacing: .04em; }
+.cond p { margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 52ch; }
+.go { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.go a { display: inline-block; text-decoration: none; font: 500 14px/1 var(--sans); padding: 10px 13px; border-radius: 6px; border: 1px solid var(--rule); color: var(--ink); background: transparent; white-space: nowrap; }
+.go a.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.go a:hover { border-color: var(--accent); }
+.go a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+dl.starts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0; font-size: 14px; }
+dl.starts dt { font-weight: 600; }
+dl.starts dd { margin: 0; color: var(--muted); }
+@media (max-width: 640px) { .cond { grid-template-columns: 1fr; } .go { justify-content: flex-start; } }
+</style>
+
+<main class="wrap">
+  <header>
+    <span class="eyebrow">Study 2 · Multi-UGV supervision · co-author demo</span>
+    <h1>Route Reconnaissance Demo</h1>
+  </header>
+  <p class="lede">Try the simulation as a participant would. Pick a training condition and where to start. Everything runs in your browser: nothing is recorded or sent anywhere, and reloading starts again.</p>
+  <dl class="starts">
+    <dt>Mission</dt><dd>Straight into the 24-minute mission, with its two short check-ins.</dd>
+    <dt>Training</dt><dd>That condition's training module, the judgment cards and the quick check, then the mission and the questions after it.</dd>
+    <dt>Full</dt><dd>The whole session as a participant sees it, from the first questions to the end (about 45–60 minutes).</dd>
+  </dl>
+
+  <section class="conds" aria-label="Conditions">
+    <div class="cond">
+      <div><h2>Rule: listed cases <span>C1</span></h2><p>Take over only for rubble piles, fallen trees and abandoned vehicles.</p></div>
+      <div class="go"><a class="primary" href="demo.html#C1-mission">Mission</a><a href="demo.html#C1-training">Training</a><a href="demo.html#C1">Full</a></div>
+    </div>
+    <div class="cond">
+      <div><h2>Rule: any obstacle <span>C2</span></h2><p>Take over whenever a vehicle meets any obstacle.</p></div>
+      <div class="go"><a class="primary" href="demo.html#C2-mission">Mission</a><a href="demo.html#C2-training">Training</a><a href="demo.html#C2">Full</a></div>
+    </div>
+    <div class="cond">
+      <div><h2>Case list <span>C3</span></h2><p>Which obstacles the vehicles handle themselves and which need you.</p></div>
+      <div class="go"><a class="primary" href="demo.html#C3-mission">Mission</a><a href="demo.html#C3-training">Training</a><a href="demo.html#C3">Full</a></div>
+    </div>
+    <div class="cond">
+      <div><h2>Capability model <span>C4</span></h2><p>The case list plus why: what the vehicles' sensors measure and what they cannot judge.</p></div>
+      <div class="go"><a class="primary" href="demo.html#C4-mission">Mission</a><a href="demo.html#C4-training">Training</a><a href="demo.html#C4">Full</a></div>
+    </div>
+  </section>
+
+  <p class="note">Use a laptop or desktop, with the window as large as possible (at least 1280 × 720). The 3D views need a reasonably recent browser. The consent, payment and debrief texts are still placeholders.</p>
+</main>

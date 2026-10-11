@@ -1,0 +1,6 @@
+{
+  "configVersion": "pilot-1",
+  "frozen": false,
+  "notes": "Pilot starting values = the pack defaults (brief section 9). Tune here after the pilot, then freeze with scripts/config/freeze-config.mjs.",
+  "overrides": {}
+}

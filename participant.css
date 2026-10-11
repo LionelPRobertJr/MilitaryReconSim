@@ -1,0 +1,40 @@
+/* Participant-shell questionnaire pages (src/shell/participant/forms.ts), shared
+   by every scenario pack. Uses the pack's colour tokens when present, with
+   neutral fallbacks so a pack without them still renders. */
+.q-form { display: grid; gap: 12px; max-width: 46em; }
+.q-item { border: 1px solid var(--rule, #ccc); border-radius: var(--radius, 6px); margin: 0; padding: 10px 14px 12px; background: #fff; }
+.q-item legend { font-weight: 600; font-size: 15px; padding: 0 4px; line-height: 1.4; }
+/* A long question wraps inside the box rather than across its top border. */
+.q-item legend { float: left; width: 100%; padding: 0; margin: 0 0 6px; }
+.q-item legend + * { clear: both; }
+.q-item.q-bad { border-color: var(--s-help, #c33); box-shadow: 0 0 0 2px rgba(214, 69, 69, 0.18); }
+.q-n { color: var(--ink-soft, #666); font-weight: 500; margin-right: 2px; }
+.q-desc { font-size: 14px !important; color: var(--ink-soft, #555); margin: 2px 0 8px !important; }
+.q-missing { color: var(--s-help, #c33); font-size: 14px !important; margin: 0 !important; }
+
+/* Likert: a row of numbered choices with end anchors. */
+.q-scale { display: grid; grid-template-columns: repeat(var(--points), minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.q-scale label { display: block; cursor: pointer; }
+.q-scale input, .q-tlx-scale input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.q-scale span { display: grid; place-items: center; height: 36px; border: 1px solid var(--ink-soft, #888); border-radius: var(--radius, 6px); background: var(--panel, #fafafa); font-size: 14px; }
+.q-scale label:hover span { border-color: var(--ink, #222); background: #fff; }
+.q-scale input:checked + span, .q-tlx-scale input:checked + span { background: var(--ink, #222); color: var(--paper, #fff); border-color: var(--ink, #222); }
+.q-scale input:focus-visible + span, .q-tlx-scale input:focus-visible + span { outline: 3px solid var(--choice, #b5822e); outline-offset: 2px; }
+.q-anchors { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--ink-soft, #666); margin-top: 4px; }
+
+/* NASA-TLX: 21 boxes, 0 to 100 in steps of 5, with a taller tick at the midpoint. */
+.q-tlx-scale { position: relative; display: grid; grid-template-columns: repeat(21, minmax(0, 1fr)); margin-top: 10px; border-left: 1px solid var(--ink-soft, #888); }
+/* Midpoint: a small tick above the scale, outside the boxes, so no box looks already chosen. */
+.q-tlx-scale::before { content: ""; position: absolute; left: 50%; top: -6px; width: 1px; height: 5px; background: var(--ink-soft, #888); }
+.q-tlx-scale label { cursor: pointer; }
+.q-tlx-scale span { display: block; height: 26px; border: 1px solid var(--ink-soft, #888); border-left: 0; background: var(--panel, #fafafa); }
+.q-tlx-scale label:hover span { background: var(--choice-soft, #eee); }
+
+.q-choice label { display: flex; gap: 8px; align-items: center; font-size: 14.5px; padding: 3px 0; cursor: pointer; }
+.q-number input { margin-top: 6px; width: 8em; padding: 5px 8px; border: 1px solid var(--ink-soft, #888); border-radius: var(--radius, 6px); }
+.q-text textarea { margin-top: 6px; width: 100%; padding: 8px 10px; border: 1px solid var(--ink-soft, #888); border-radius: var(--radius, 6px); font: inherit; font-size: 14.5px; line-height: 1.45; resize: vertical; }
+
+.t-warn { border-left: 5px solid var(--s-help, #c33); background: #fff; padding: 9px 12px; border-radius: var(--radius, 6px); }
+.t-code { font-size: 18px; letter-spacing: 0.06em; padding: 2px 8px; background: var(--choice-soft, #eee); border-radius: 4px; user-select: all; }
+.researcher-dl { border-top: 1px dashed var(--rule, #ccc); padding-top: 10px; }
+.q-scale.q-labelled small { display: block; text-align: center; font-size: 12px; line-height: 1.25; color: var(--ink-soft, #666); margin-top: 4px; }

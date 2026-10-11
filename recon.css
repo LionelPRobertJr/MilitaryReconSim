@@ -1,0 +1,395 @@
+/* Route Reconnaissance console (Study 2). A daylight map-table look: pale
+   sage paper, dark green-grey ink, ochre for the operator's own choices. The
+   five status lights carry the only saturated colour. Desktop only
+   (>= 1280 x 720, brief section 12). */
+:root {
+  --paper: #eef1e8;
+  --panel: #f8f9f4;
+  --ink: #26332c;
+  --ink-soft: #5c6a61;
+  --rule: #c9d0c1;
+  --choice: #b5822e;
+  --choice-soft: #f1e3c6;
+  --s-auto: #2e9e5b;
+  --s-proc: #e0b100;
+  --s-help: #d64545;
+  --s-op: #2f6fd6;
+  --s-hold: #8a9399;
+  --radius: 6px;
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--paper);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--paper); }
+h1, h2 { margin: 0; font-weight: 600; }
+button, input, select { font: inherit; color: inherit; }
+button {
+  border: 1px solid var(--ink-soft);
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { background: #fff; border-color: var(--ink); }
+button:disabled { opacity: 0.38; cursor: default; }
+button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+button.primary:hover:not(:disabled) { background: #33443b; }
+:focus-visible { outline: 3px solid var(--choice); outline-offset: 2px; }
+
+#too-small { position: fixed; inset: 0; display: grid; place-items: center; padding: 32px; text-align: center; max-width: 34em; margin: auto; }
+#too-small[hidden], #app[hidden] { display: none; }
+
+#app { height: 100vh; display: grid; grid-template-rows: 48px 1fr; min-height: 720px; min-width: 1280px; }
+#topbar { display: flex; align-items: center; gap: 28px; padding: 0 18px; border-bottom: 1px solid var(--rule); background: var(--panel); }
+#topbar h1 { font-size: 17px; margin-right: auto; }
+.topstat { display: flex; align-items: baseline; gap: 7px; font-size: 13px; color: var(--ink-soft); }
+.topstat strong { font-size: 20px; color: var(--ink); font-weight: 600; }
+#sections { display: flex; gap: 4px; }
+#sections span { font-size: 13px; padding: 3px 10px; border-radius: 999px; color: var(--ink-soft); border: 1px solid var(--rule); }
+#sections span.done { background: var(--rule); color: var(--ink); }
+#sections span.current { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* The console (research team redesign, Oct 2026): two vehicle bays side by side on an olive-khaki field, each
+   with an engraved name, a status plate with a real indicator lamp, a message line and the view through the
+   vehicle's windscreen; the Spot Report below. The windscreen views carry the realism; the chrome stays quiet. */
+#app { --khaki: #aaa48b; --khaki-deep: #959077; --plate: #e4ddc3; --plate-line: #8d876f; --plate-edge: #3f3d35; --ink-plate: #262520; --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace; }
+#app { background: radial-gradient(ellipse at 50% 35%, #b2ac93 0%, var(--khaki) 55%, var(--khaki-deep) 100%); }
+#topbar { background: #26261f; border-bottom: 1px solid #12120f; color: #e9e5d3; }
+#topbar h1 { font: 600 15px/1 var(--mono); letter-spacing: 0.03em; color: #e9e5d3; }
+#topbar .topstat { color: #a9a58f; }
+#topbar .topstat strong { font-family: var(--mono); color: #f3efdf; }
+#sections span { border-color: #4b4a40; color: #a9a58f; font-family: var(--mono); font-size: 12px; }
+#sections span.done { background: #3c3b33; color: #d9d5c3; }
+#sections span.current { background: #e2c25a; color: #23221d; border-color: #e2c25a; }
+#console {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 10px 14px 12px;
+  min-height: 0;
+}
+#coach {
+  grid-row: 1; background: #f2eedf; border: 1px solid #8d876f; border-left: 5px solid #c9a032;
+  border-radius: 3px; padding: 9px 13px; font-size: 14px; line-height: 1.45; min-height: 3.6em; max-width: 80em; justify-self: center; width: 100%;
+  box-shadow: 0 2px 6px rgba(40, 38, 28, 0.18);
+}
+#coach[hidden] { display: none; }
+
+#ugv-row { grid-row: 2; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; position: relative; }
+#ugv-row::before { content: ""; position: absolute; left: 50%; top: 6px; bottom: 6px; width: 1px; background: #5c594c; box-shadow: 1px 0 0 rgba(255, 255, 255, 0.25); }
+
+/* The windscreen view. The cab keeps a fixed shape and fits the space left in the panel. */
+.cab-wrap { width: 100%; height: 100%; min-height: 0; container-type: size; display: grid; place-items: start center; }
+.cab { position: relative; width: min(100cqw, calc(100cqh * 1.7576)); aspect-ratio: 1.7576; overflow: hidden; border-radius: 6px; background: #1b1b18; cursor: default; box-shadow: 0 8px 22px rgba(30, 28, 20, 0.38), 0 0 0 1px #2c2b26; }
+.cab .window { position: absolute; left: 5.17%; width: 89.66%; top: 10.3%; height: 69.09%; overflow: hidden; background: #c9d7dc; }
+.cab .cockpit { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cab .placard {
+  position: absolute; left: 50%; top: 81.5%; transform: translateX(-50%); padding: 2px 9px; min-width: 20%;
+  background: #0e1410; color: #7fe0a0; border: 1px solid #45443c; border-radius: 2px; text-align: center;
+  font: 600 clamp(8px, 1.15cqw, 12px)/1.3 var(--mono); letter-spacing: 0.08em; box-shadow: inset 0 0 8px rgba(127, 224, 160, 0.18), 0 1px 0 #55534a;
+}
+.cab .placard[data-mode="WAITING FOR OPERATOR"] { color: #ff8f7f; box-shadow: inset 0 0 8px rgba(255, 110, 90, 0.25), 0 1px 0 #55534a; }
+.cab .placard[data-mode="VEHICLE STUCK"] { color: #ffb35c; box-shadow: inset 0 0 8px rgba(255, 170, 80, 0.25), 0 1px 0 #55534a; }
+.cab .placard[data-mode="OPERATOR ROUTE"] { color: #8fbaff; box-shadow: inset 0 0 8px rgba(120, 170, 255, 0.25), 0 1px 0 #55534a; }
+.cab .placard[data-mode="HOLDING"], .cab .placard[data-mode="MISSION COMPLETE"] { color: #d8d4c4; box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.1), 0 1px 0 #55534a; }
+.cab .wp { position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: 50% 58%; }
+.cab .wp .wp-ribbon { fill: rgba(255, 199, 56, 0.2); pointer-events: none; }
+.cab .wp .wp-path { fill: none; stroke: #ffd257; stroke-width: 1.3; stroke-dasharray: 4 3; stroke-linejoin: round; stroke-linecap: round; opacity: 0.95; pointer-events: none; }
+.cab .wp .wp-pt { cursor: pointer; outline: none; }
+.cab .wp .hit { fill: transparent; }
+.cab .wp .wp-shadow { fill: rgba(20, 18, 10, 0.4); }
+.cab .wp .wp-stem { stroke: #2b2410; }
+.cab .wp .wp-head { fill: #ffcb3d; stroke: #3a2d08; stroke-width: 1.8; }
+.cab .wp text { font: 700 10px/1 var(--mono); fill: #2b2410; text-anchor: middle; pointer-events: none; }
+.cab .wp .wp-pt:hover .wp-head, .cab .wp .wp-pt:focus-visible .wp-head { fill: #fff2b8; stroke-width: 2.4; }
+.cab.can-take-over .wp .wp-head { animation: wp-glow 1.4s ease-in-out infinite; }
+@keyframes wp-glow { 50% { fill: #ffe68a; } }
+
+#spot {
+  grid-row: 3; background: linear-gradient(180deg, #ebe5cd, var(--plate)); border: 1px solid var(--plate-line); border-radius: 3px; padding: 8px 14px 10px;
+  min-height: 0; width: min(100%, 1100px); justify-self: center; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 5px rgba(40, 38, 28, 0.22);
+}
+#spot h2 { font: 600 14px/1.3 var(--mono); letter-spacing: 0.04em; margin-bottom: 6px; color: var(--ink-plate); }
+/* Spot Report: a large image to count from, and the two counts stacked beside it. */
+#spot { width: fit-content; max-width: 100%; }
+#spot-body { display: grid; grid-template-columns: auto 230px; gap: 18px; align-items: start; }
+#spot-canvas { height: clamp(130px, 21vh, 210px); width: auto; aspect-ratio: 16 / 9; max-width: 100%; display: block; border-radius: 2px; border: 1px solid var(--plate-edge); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2); }
+#spot-form { display: grid; grid-template-columns: 1fr; gap: 8px; align-content: start; font-size: 14px; }
+#spot-form p { margin: 0; line-height: 1.35; }
+#spot-form label { display: grid; grid-template-columns: 5.2em 1fr; align-items: center; gap: 8px; font-weight: 500; }
+#spot-form input { width: 100%; padding: 6px 9px; border: 1px solid #77725e; border-radius: 3px; background: #fffdf6; font: 500 16px/1.2 var(--mono); }
+#spot-form input:focus-visible { outline: 3px solid #c9a032; outline-offset: 1px; }
+#spot-submit { width: 100%; padding: 7px 12px; background: #34342c; color: #f3efdf; border-color: #34342c; font-weight: 500; }
+#spot-submit:hover:not(:disabled) { background: #46463c; }
+#spot-status { color: #5d5a4b; font-size: 13px; }
+
+.overlay { position: fixed; inset: 0; background: rgba(38, 51, 44, 0.45); display: grid; place-items: center; z-index: 10; padding: 24px; overflow: auto; }
+.overlay[hidden] { display: none; }
+.sheet { background: var(--panel); border-radius: 10px; padding: 20px 28px; max-width: 980px; width: 100%; box-shadow: 0 18px 50px rgba(20, 30, 25, 0.28); }
+.sheet.narrow { max-width: 560px; }
+.sheet h1 { font-size: 24px; margin-bottom: 10px; }
+.sheet h2 { font-size: 15px; margin: 12px 0 4px; }
+.sheet p, .sheet li, .sheet dd { font-size: 14px; line-height: 1.45; margin: 4px 0; }
+.sheet .lead { font-size: 15.5px; max-width: 46em; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; }
+.legend { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.legend li { display: flex; align-items: center; gap: 9px; }
+.legend .lamp { width: 13px; height: 13px; opacity: 1; }
+.actions-legend { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; }
+.actions-legend dt { font-weight: 600; font-size: 14.5px; }
+.actions-legend dd { margin: 0; }
+.points { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+.points b { display: inline-block; min-width: 3.2em; }
+.buttons { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.buttons[hidden], [data-researcher][hidden] { display: none; }
+.overlay > .sheet { margin: auto; }
+#start-overlay .sheet { margin-bottom: 24px; }
+#researcher { margin-top: 16px; font-size: 13.5px; color: var(--ink-soft); }
+#researcher .settings { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+#researcher label { display: grid; gap: 3px; }
+#researcher input, #researcher select { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 4px; background: #fff; }
+.placeholder { border: 1px dashed var(--choice); background: var(--choice-soft); padding: 10px 12px; border-radius: var(--radius); }
+#results-table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+#results-table td { padding: 5px 0; border-bottom: 1px solid var(--rule); }
+#results-table td:last-child { text-align: right; font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.speed-badge { font-size: 12px; padding: 3px 8px; border-radius: 4px; background: var(--choice-soft); border: 1px solid var(--choice); }
+
+/* Training module, judgments and comprehension (M3). */
+#training-overlay { background: var(--paper); }
+.sheet.training { max-width: 900px; box-shadow: none; border: 1px solid var(--rule); }
+.t-progress { font-size: 13px; color: var(--ink-soft); margin: 0 0 6px; }
+.t-text { max-width: 40em; font-size: 15px !important; line-height: 1.55 !important; }
+.t-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.t-pair figure, .t-card figure { margin: 0; }
+.t-pair svg, .t-card svg, .t-pair .t-img, .t-card .t-img { display: block; width: 100%; aspect-ratio: 16 / 10; height: auto; border-radius: 4px; border: 1px solid var(--rule); }
+.t-pair figcaption { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; }
+.t-example { margin: 14px 0 6px; }
+.t-verdict, .t-feedback { font-size: 15px !important; line-height: 1.5 !important; margin: 8px 0 0 !important; max-width: 46em; }
+.t-feedback { padding: 9px 12px; border-radius: var(--radius); border-left: 5px solid var(--ink-soft); background: #fff; }
+.t-feedback.t-right { border-left-color: var(--s-auto); }
+.t-feedback.t-wrong { border-left-color: var(--s-help); }
+.t-question { font-weight: 600; font-size: 15px !important; margin: 14px 0 6px !important; }
+.t-answer button { min-width: 180px; padding: 9px 14px; }
+.t-card { display: grid; grid-template-columns: 420px 1fr; gap: 16px; align-items: start; }
+.t-scale { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--ink-soft); }
+.t-scale button { width: 40px; }
+.t-answer button[aria-pressed="true"], .t-scale button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.t-quiz fieldset { border: 1px solid var(--rule); border-radius: var(--radius); margin: 0 0 12px; padding: 10px 14px; }
+.t-quiz legend { font-weight: 600; font-size: 15px; padding: 0 4px; }
+.t-quiz label { display: flex; gap: 8px; align-items: center; font-size: 14.5px; padding: 3px 0; }
+.t-example .t-pair { max-width: 600px; }
+.t-example { display: grid; grid-template-columns: 600px 1fr; gap: 16px; align-items: center; }
+.t-example .t-verdict { margin: 0 !important; }
+
+/* Live camera feed (ui/camera-feed.ts): the scene, streaming ground, grain, HUD, inside the windscreen. */
+.cab .feed { position: absolute; inset: -3px; will-change: transform; }
+.cab .scene { position: absolute; inset: 0; transform-origin: 50% 58%; }
+.cab .scene svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cab .grain { position: absolute; inset: 0; opacity: 0.07; mix-blend-mode: multiply; pointer-events: none; animation: cam-grain 0.5s steps(4) infinite; }
+.cab .window::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(40, 38, 30, 0.28), transparent 22%), radial-gradient(ellipse at 50% 60%, transparent 60%, rgba(60, 55, 40, 0.28)); }
+@keyframes cam-grain { 0% { background-position: 0 0; } 25% { background-position: -31px 17px; } 50% { background-position: 23px -41px; } 75% { background-position: -47px -9px; } 100% { background-position: 11px 29px; } }
+.cab .hud { position: absolute; inset: 0; pointer-events: none; font: 600 10px/1 ui-monospace, "SFMono-Regular", Menlo, monospace; color: #fff; text-shadow: 0 0 2px #000, 0 1px 2px #000; letter-spacing: 0.04em; z-index: 1; }
+.cab .hud > span { position: absolute; }
+.cab .hud .live { top: 7px; left: 7%; display: flex; align-items: center; gap: 4px; }
+.cab .hud .live i { width: 6px; height: 6px; border-radius: 50%; background: #e04a3a; animation: cam-live 1.6s steps(2) infinite; }
+@keyframes cam-live { 50% { opacity: 0.25; } }
+.cab .hud .cam-id { top: 7px; right: 7%; }
+.cab .hud .tc { bottom: 9px; right: 5%; font-variant-numeric: tabular-nums; }
+.cab.cut .feed { animation: cam-cut 0.24s linear; }
+@keyframes cam-cut { 0% { filter: brightness(1.8) contrast(0.6); transform: translateX(-4px); } 40% { filter: brightness(0.7); transform: translateX(3px); } 100% { filter: none; transform: none; } }
+.cab.reduced .grain, .cab.reduced .hud .live i { animation: none; }
+@media (prefers-reduced-motion: reduce) { .cab .grain, .cab .hud .live i, .cab.cut .feed, .cab .wp .diamond, .ugv-head .lamp { animation: none !important; } }
+
+.cab .wp .wp-path.far { opacity: 0.45; stroke-dasharray: 2 3; }
+
+/* Operator controls under each vehicle's message: Stop (halt it where it is) and Continue (let it drive on),
+   plus how to take over. Styled as panel push-buttons. */
+.ctl {
+  display: inline-flex; align-items: center; gap: 7px; padding: 5px 13px; font: 600 14px/1.2 var(--mono); border-radius: 4px;
+  border: 1px solid #2f2e29; color: #f5f2e6; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 0 #1d1c18;
+}
+.ctl:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 0 #1d1c18; }
+.ctl.stop { background: linear-gradient(180deg, #c84b3e, #a33a2f); }
+.ctl.stop:hover:not(:disabled) { background: linear-gradient(180deg, #d4574a, #ad4134); border-color: #2f2e29; }
+.ctl.go { background: linear-gradient(180deg, #3d8a57, #2f6f45); }
+.ctl.go:hover:not(:disabled) { background: linear-gradient(180deg, #47965f, #357a4c); border-color: #2f2e29; }
+.ctl i { width: 10px; height: 10px; background: currentColor; }
+.ctl.stop i { border-radius: 1px; }
+.ctl.go i { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.ctl:disabled { opacity: 1; background: #cfc8ae; color: #8b8670; border-color: #a8a28a; box-shadow: none; cursor: default; }
+.cab .placard[data-mode="OPERATOR HOLD"] { color: #ffd257; box-shadow: inset 0 0 8px rgba(255, 210, 87, 0.25), 0 1px 0 #55534a; }
+/* The detection alert, in the view: a short amber banner at the top of the windscreen. */
+.cab .alert-banner {
+  position: absolute; top: 8%; left: 50%; transform: translateX(-50%); z-index: 2; padding: 4px 12px; border-radius: 3px;
+  background: rgba(255, 196, 40, 0.92); color: #241d05; font: 600 clamp(10px, 1.6cqw, 14px)/1.2 var(--mono); letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); animation: banner-in 0.9s ease-out;
+}
+@keyframes banner-in { 0%, 30%, 60% { opacity: 1; } 15%, 45% { opacity: 0.35; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cab .alert-banner { animation: none; } }
+
+/* Layout (Oct 2026 revision): a slim one-line header per vehicle (name, light, status, Stop/Continue), a
+   fixed-height message line, and the windscreen view taking the rest; the quick reference bottom-left and the
+   Spot Report bottom-right. Nothing in a panel changes size when its state changes. */
+#console { grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; padding: 8px 12px 10px; }
+#ugv-row { grid-row: 2; }
+.ugv { display: grid; grid-template-rows: 40px 2.8em minmax(0, 1fr); gap: 4px; padding: 0 12px; min-height: 0; min-width: 0; }
+.ugv-head {
+  display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 6px 0 12px; min-width: 0;
+  background: linear-gradient(180deg, #ebe5cd, var(--plate)); border: 1px solid var(--plate-line); border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 3px rgba(40, 38, 28, 0.2);
+}
+.ugv-name { font: 600 18px/1 var(--mono); letter-spacing: 0.06em; color: #2f2e29; white-space: nowrap; }
+.ugv-status { font: 500 15px/1 var(--mono); color: var(--ink-plate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+.lamp { display: inline-block; border-radius: 50%; background: currentColor; opacity: 0.18; flex: none; }
+.lamp.on { opacity: 1; box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 25%, transparent); }
+.s-auto { color: var(--s-auto); } .s-proc { color: var(--s-proc); } .s-help { color: var(--s-help); }
+.s-op { color: var(--s-op); } .s-hold { color: var(--s-hold); }
+.lamp.big {
+  width: 24px; height: 24px; opacity: 1;
+  background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.85) 0 9%, transparent 26%), radial-gradient(circle at 50% 55%, currentColor 0 55%, color-mix(in srgb, currentColor 60%, #000) 100%);
+  border: 2px solid #2f2e29; box-shadow: 0 0 0 1px #8d876f, 0 0 10px 2px color-mix(in srgb, currentColor 55%, transparent), inset 0 -2px 4px rgba(0, 0, 0, 0.35);
+}
+.ugv[data-state="processing"] .ugv-head .lamp, .ugv[data-state="help_requested"] .ugv-head .lamp { animation: lamp-pulse 1.2s ease-in-out infinite; }
+@keyframes lamp-pulse { 50% { box-shadow: 0 0 0 1px #8d876f, 0 0 3px 0 color-mix(in srgb, currentColor 30%, transparent), inset 0 -2px 4px rgba(0, 0, 0, 0.35); } }
+.ugv[data-state="help_requested"] .ugv-head { box-shadow: inset 4px 0 0 var(--s-help), 0 1px 3px rgba(40, 38, 28, 0.2); }
+.ugv[data-state="holding"] .ugv-head { box-shadow: inset 4px 0 0 var(--s-hold), 0 1px 3px rgba(40, 38, 28, 0.2); }
+.message { margin: 0; padding: 0 4px; height: 2.8em; overflow: hidden; font-size: 13.5px; line-height: 1.4; color: #2b2a24; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.controls { display: flex; align-items: center; gap: 6px; flex: none; }
+.ctl {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; font: 600 13.5px/1.2 var(--mono); border-radius: 4px;
+  border: 1px solid #2f2e29; color: #f5f2e6; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 0 #1d1c18;
+}
+.ctl:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 0 #1d1c18; }
+.ctl.stop { background: linear-gradient(180deg, #c84b3e, #a33a2f); }
+.ctl.stop:hover:not(:disabled) { background: linear-gradient(180deg, #d4574a, #ad4134); border-color: #2f2e29; }
+.ctl.go { background: linear-gradient(180deg, #3d8a57, #2f6f45); }
+.ctl.go:hover:not(:disabled) { background: linear-gradient(180deg, #47965f, #357a4c); border-color: #2f2e29; }
+.ctl i { width: 9px; height: 9px; background: currentColor; }
+.ctl.stop i { border-radius: 1px; }
+.ctl.go i { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.ctl:disabled { opacity: 1; background: #cfc8ae; color: #8b8670; border-color: #a8a28a; box-shadow: none; cursor: default; }
+
+/* The 3D view fills the windscreen; the waypoint pins are buttons over it. */
+.cab .view3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cab .pins { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.cab .wp-pin {
+  position: absolute; left: 0; top: 0; padding: 0; border-radius: 50%; pointer-events: auto; display: grid; place-items: center;
+  background: #ffcb3d; color: #2b2410; border: 2px solid #3a2d08; font: 700 14px/1 var(--mono); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.cab .wp-pin:hover, .cab .wp-pin:focus-visible { background: #fff2b8; border-width: 3px; }
+.cab.can-take-over .wp-pin { animation: pin-glow 1.4s ease-in-out infinite; }
+@keyframes pin-glow { 50% { background: #ffe68a; box-shadow: 0 0 0 4px rgba(255, 210, 80, 0.45), 0 2px 6px rgba(0, 0, 0, 0.45); } }
+.cab .take-hint { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); z-index: 2; padding: 3px 10px; border-radius: 3px; background: rgba(20, 20, 16, 0.72); color: #ffe08a; font: 600 clamp(10px, 1.5cqw, 13px)/1.2 var(--mono); white-space: nowrap; pointer-events: none; }
+.cab .take-hint:empty { display: none; }
+.cab.three .window { background: #b9c8cf; }
+.cab.three .grain { opacity: 0.045; }
+
+/* Bottom row: quick reference (left), Spot Report (right). */
+#quickref, #spot { grid-row: 3; }
+#console { grid-template-columns: minmax(0, 1fr) auto; }
+#coach, #ugv-row { grid-column: 1 / -1; }
+#quickref {
+  grid-column: 1; align-self: stretch; display: grid; grid-template-columns: auto auto; grid-template-rows: auto 1fr; gap: 4px 28px; justify-content: start;
+  background: rgba(236, 231, 211, 0.55); border: 1px solid rgba(141, 135, 111, 0.6); border-radius: 3px; padding: 8px 14px; font-size: 13px; color: #2b2a24;
+}
+#quickref h2 { grid-column: 1 / -1; font: 600 13px/1.3 var(--mono); letter-spacing: 0.04em; color: var(--ink-plate); }
+.qr-lights { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; align-content: start; }
+.qr-lights li { display: flex; align-items: center; gap: 8px; }
+.qr-lights .lamp { width: 11px; height: 11px; }
+.qr-actions { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 22em); gap: 5px 10px; align-content: start; }
+.qr-actions dt { font: 600 12.5px/1.3 var(--mono); display: flex; align-items: center; gap: 6px; }
+.qr-actions dd { margin: 0; line-height: 1.3; }
+.key { width: 14px; height: 14px; border-radius: 3px; display: inline-grid; place-items: center; flex: none; }
+.key.stop { background: #b5443a; } .key.go { background: #357a4c; }
+.key.wp { border-radius: 50%; background: #ffcb3d; border: 1.5px solid #3a2d08; font: 700 9px/1 var(--mono); color: #2b2410; }
+#spot { grid-column: 2; justify-self: end; width: auto; padding: 7px 12px 9px; }
+#spot-body { grid-template-columns: auto 200px; gap: 14px; }
+#spot-canvas { height: clamp(120px, 19vh, 190px); }
+
+@media (max-height: 820px) {
+  #console { gap: 6px; padding: 6px 10px 8px; }
+  #coach { padding: 6px 12px; font-size: 13.5px; min-height: 0; }
+  #spot-canvas { height: 118px; }
+  #spot-form { gap: 5px; }
+  #spot-form input { padding: 4px 8px; font-size: 15px; }
+  #spot-submit { padding: 5px 10px; }
+  #quickref { padding: 6px 12px; font-size: 12.5px; }
+}
+#spot h2 span { font: 400 12.5px/1.3 var(--sans, "IBM Plex Sans", system-ui, sans-serif); letter-spacing: 0; color: #5d5a4b; margin-left: 6px; }
+#spot-form { gap: 7px; }
+#spot-status { line-height: 1.3; }
+@media (max-height: 820px) {
+  #spot { padding: 5px 10px 7px; }
+  #spot h2 { margin-bottom: 4px; }
+  #spot-canvas { height: 112px; }
+  #spot-form { gap: 4px; }
+  #spot-form input { padding: 3px 8px; font-size: 14.5px; }
+  #spot-submit { padding: 4px 10px; }
+  #spot-status { font-size: 12px; }
+  .ugv { grid-template-rows: 36px 2.8em minmax(0, 1fr); }
+  .ugv-head { height: 36px; }
+  .message { font-size: 13px; }
+}
+/* Fixed heights so nothing below moves when the coach text or the Spot Report's status changes length. */
+#coach { height: calc(3 * 1.45em + 18px); min-height: 0; overflow: auto; }
+#spot-status { height: calc(3 * 1.3em); overflow: hidden; margin: 0; }
+@media (max-height: 820px) { #coach { height: calc(3 * 1.45em + 12px); } }
+/* A sheet's last row of buttons is its footer: full width, flush with the sheet's bottom edge, and it stays in view
+   when a long sheet scrolls (the sheet scrolls inside the window, not the page). Oct 11, 2026: the previous version
+   stuck out below the sheet and looked like a bar floating over the text. */
+.overlay > .sheet { max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow: auto; overscroll-behavior: contain; }
+.overlay .sheet > .buttons:last-child { position: sticky; bottom: -20px; z-index: 2; margin: 18px -28px -20px; padding: 12px 28px 16px; background: var(--panel); border-top: 1px solid rgba(38, 51, 44, 0.14); border-radius: 0 0 10px 10px; }
+/* Spot Report, larger (research team decision, Oct 10, 2026): a bigger picture, a legend of what to count, and the
+   true counts after each report. */
+#spot-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 6px; font-size: 12.5px; color: #3c3a30; }
+#spot-legend span { display: inline-flex; align-items: center; gap: 5px; }
+#spot-legend .skip { color: #6b6855; }
+#spot-legend svg { flex: none; }
+#spot-canvas { height: clamp(150px, 26vh, 230px); }
+#spot-body { grid-template-columns: auto 210px; }
+#spot-status { white-space: pre-line; height: calc(4 * 1.3em); }
+@media (max-height: 820px) {
+  #spot-canvas { height: clamp(150px, 26vh, 200px); }
+  #spot-legend { margin-bottom: 4px; }
+}
+/* The legend sits at the top of the form column, one line per kind, so the picture can be taller. */
+#spot-form #spot-legend { display: grid; gap: 2px; margin: 0 0 2px; font-size: 12px; }
+#spot-body { grid-template-columns: auto 220px; }
+@media (max-height: 820px) { #spot-canvas { height: clamp(150px, 24vh, 185px); } }
+/* Larger views (Oct 10, 2026, evening: "the dashboard screens are way too small"):
+   - each vehicle's message is shown in the cab's roof lining, above the windscreen, instead of on its own row;
+   - in the practice the coach's text sits bottom left, in the quick reference's place, not above the views;
+   - the Spot Report is a little more compact. */
+.ugv { grid-template-rows: 40px minmax(0, 1fr); gap: 6px; }
+@media (max-height: 820px) { .ugv { grid-template-rows: 36px minmax(0, 1fr); } }
+.cab-wrap { position: relative; }
+.cab-wrap .message {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 3; box-sizing: border-box;
+  width: min(100cqw, calc(100cqh * 1.7576)); height: calc(min(100cqw, calc(100cqh * 1.7576)) / 1.7576 * 0.103);
+  margin: 0; padding: 3px 9% 0; display: flex; align-items: center; justify-content: center; text-align: center;
+  font: 500 clamp(10.5px, 1.8cqw, 13px)/1.2 "IBM Plex Sans", system-ui, sans-serif; color: #e9e4cf; text-shadow: 0 1px 0 #000;
+  overflow: hidden; pointer-events: none;
+}
+.ugv[data-state="help_requested"] .cab-wrap .message { color: #ffb4a8; }
+.ugv[data-state="processing"] .cab-wrap .message { color: #ffe08a; }
+#coach { grid-row: 3; grid-column: 1; align-self: stretch; height: auto; max-width: none; justify-self: stretch; overflow: auto; font-size: 14px; }
+#coach, #ugv-row { grid-column: auto; }
+#ugv-row { grid-column: 1 / -1; }
+#quickref[hidden] { display: none; }
+#spot-canvas { height: clamp(140px, 22vh, 200px); }
+@media (max-height: 820px) { #spot-canvas { height: clamp(140px, 21vh, 170px); } #coach { font-size: 13.5px; } }
+#spot-status { height: calc(3 * 1.3em); }
+/* When the panel is taller than the cab needs, the cab grows taller (down to an aspect of 1.55) instead of leaving
+   empty space; its windscreen view grows with it. */
+.cab-wrap { --cw: min(100cqw, calc(100cqh * 1.7576)); --ch: min(100cqh, calc(var(--cw) / 1.45)); }
+.cab { width: var(--cw); height: var(--ch); aspect-ratio: auto; }
+.cab-wrap .message { width: var(--cw); height: calc(var(--ch) * 0.103); }
+
+/* Training: numbered points and the boxed "two questions" paragraph (principles page, Oct 11, 2026). */
+.t-point { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: start; margin: 10px 0; }
+.t-num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #26332c; color: #f4f2ea; font: 600 13px/1 var(--sans, "IBM Plex Sans", system-ui, sans-serif); margin-top: 1px; }
+.t-key { background: #f1ead4; border-left: 4px solid #b0893a; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-top: 14px; }
