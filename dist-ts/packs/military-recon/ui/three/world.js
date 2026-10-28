@@ -29,6 +29,12 @@ const smoothstep = (a, b, x) => {
  */
 function drawAfterTrack(g) {
     g.traverse((o) => {
+        // Sprites (the smoke's puffs) come last, so the track is never painted over them (Oct 28, 2026: the track
+        // showed clearly through the smoke bank, as if there were a clear lane through it).
+        if (o.isSprite) {
+            o.renderOrder = o.userData?.renderOrder ?? 11;
+            return;
+        }
         if (!o.isMesh)
             return;
         const role = o.userData?.role;
