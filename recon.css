@@ -402,3 +402,50 @@ button.primary:hover:not(:disabled) { background: #33443b; }
 
 /* Questionnaire pages: the submit row stays visible at the bottom of a long page (agent testing, Oct 28, 2026). */
 .overlay .sheet > form > .buttons:last-child { position: sticky; bottom: -20px; z-index: 2; margin-bottom: -20px; padding: 12px 0 16px; background: var(--panel); }
+
+/* Mission briefing (Oct 28, 2026, user: present the directions and rules in a clearer, more professional format).
+   Three numbered cards under one highlighted warning; same text for every condition. */
+.sheet.brief { max-width: 1120px; padding: 22px 28px 20px; --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace; }
+.brief-eyebrow { font: 600 11.5px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--choice); margin: 0 0 6px !important; }
+.sheet.brief h1 { font-size: 26px; margin-bottom: 6px; }
+.sheet.brief .lead { margin-bottom: 14px; }
+.brief-alert { display: flex; gap: 12px; align-items: flex-start; padding: 11px 14px; margin: 0 0 16px; border-radius: var(--radius); background: var(--choice-soft); border: 1px solid #dcc08a; border-left: 6px solid var(--choice); }
+.brief-alert p { margin: 0 !important; font-size: 15px !important; }
+.brief-alert-mark { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--choice); color: #fff; display: grid; place-items: center; font: 700 15px/1 var(--mono); margin-top: 1px; }
+.brief-grid { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 14px; align-items: start; }
+.brief-card { border: 1px solid var(--rule); border-radius: 8px; background: #fff; padding: 12px 14px 12px; min-width: 0; }
+.brief-card h2 { display: flex; align-items: center; gap: 9px; font-size: 15.5px; margin: 0 0 8px !important; }
+.brief-card h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 12px 0 5px; }
+.brief-step { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-items: center; font: 600 12px/1 var(--mono); flex: none; }
+.brief-card p, .brief-card li, .brief-card dd, .brief-card td { font-size: 13.5px !important; line-height: 1.42; }
+.brief-defs { margin: 0; display: grid; gap: 2px; }
+.brief-defs dt { font-weight: 600; font-size: 13.5px; margin-top: 4px; }
+.brief-defs dd { margin: 0; }
+.brief-card .legend { gap: 5px; }
+.brief-card .legend li { align-items: flex-start; }
+.brief-card .legend .lamp, .brief-outcomes .lamp { margin-top: 3px; flex: none; }
+.brief-card .legend b { display: inline-block; min-width: 3.6em; }
+.brief-outcomes { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 4px; }
+.brief-outcomes li { display: flex; gap: 9px; align-items: flex-start; padding: 4px 8px; border-radius: 5px; background: var(--panel); }
+.brief-outcomes .lamp { width: 12px; height: 12px; }
+.brief-outcomes li.brief-hot { background: var(--choice-soft); outline: 1px solid #dcc08a; }
+.brief-controls { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; }
+.brief-controls dt { font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.brief-controls dd { margin: 0; }
+.brief-mark { background: var(--choice-soft); box-shadow: 0 0 0 2px var(--choice-soft); border-radius: 2px; font-weight: 600; }
+.brief-points { width: 100%; border-collapse: collapse; margin: 0 0 6px; }
+.brief-points caption { text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--s-auto); padding: 2px 0 3px; }
+.brief-loss caption { color: var(--s-help); }
+.brief-points td { padding: 3px 0; border-top: 1px solid #e4e8df; vertical-align: top; }
+.brief-points td:first-child { font: 600 13.5px/1.42 var(--mono); width: 3.6em; color: var(--ink); }
+.brief-note { color: var(--ink-soft); margin: 2px 0 0 !important; }
+.sheet.brief .legend .lamp, .brief-outcomes .lamp { opacity: 1; }
+.brief-card p, .brief-card li, .brief-card dd { margin: 1px 0 !important; }
+.brief-card .legend { gap: 2px; }
+.brief-outcomes { gap: 3px; }
+.brief-outcomes li { padding: 3px 8px; }
+.sheet.brief .lead { max-width: none; }
+.brief-defs dt { margin-top: 2px; }
+.brief-controls { grid-template-columns: 1fr; gap: 0; }
+.brief-controls dt { margin-top: 6px; }
+.brief-controls dd { padding-left: 21px; }

@@ -273,7 +273,7 @@ export class ConsoleSession {
         const can = this.sim.isEnded() || this.sim.pausedReason() ? { hold: false, resume: false } : this.sim.availableActions(u.id);
         for (const btn of el.querySelectorAll("[data-ctl]"))
             btn.disabled = !can[btn.dataset.ctl];
-        this.setHtml(`hint-${u.id}`, el.querySelector("[data-role=hint]"), target ? "Take over: click a numbered waypoint" : "");
+        this.setHtml(`hint-${u.id}`, el.querySelector("[data-role=hint]"), target ? "Take over: click any numbered waypoint" : "");
         this.setHtml(`status-${u.id}`, el.querySelector("[data-role=status]"), d.status);
         this.setHtml(`msg-${u.id}`, el.querySelector("[data-role=msg]"), d.message);
         const lamp = el.querySelector("[data-role=lamp]");
@@ -324,7 +324,7 @@ export class ConsoleSession {
         else if (u1.state === "holding" && u1.holdReason === "operator")
             text = "You stopped UGV #1 (grey light): it waits where it is. You could take over now by clicking a waypoint. Here, press Continue to let it drive on and watch what it does.";
         else if (u2.state === "holding" && u2.holdReason === "operator")
-            text = "You stopped UGV #2: it waits where it is. Now take over: click one of the numbered waypoints beside the tree in its view.";
+            text = "You stopped UGV #2: it waits where it is. Now take over: click one of the numbered waypoints beside the tree in its view. Any waypoint works; they all lead round the obstacle.";
         else if (u2.state === "help_requested")
             text = `UGV #2 could not get past and has stopped by itself: its light is red and it is waiting for you. A stop like this costs ${stop} points in the mission. Click one of the waypoints beside the tree in UGV #2's view to send it around.`;
         else if (u2.state === "operator_control")
@@ -333,7 +333,7 @@ export class ConsoleSession {
             text = "Both vehicles are past their obstacles and drive on to the objective. Meanwhile, keep counting in the Spot Report (bottom right).";
         else if (u1.state === "processing" && u2.state === "processing" && !u1.reachedObstacle)
             text =
-                "Both lights are yellow: each vehicle has spotted something ahead. It slows down and judges it but keeps driving: it will only stop by itself if it cannot get past. You decide what to do. Stop halts a vehicle where it is while you look; Continue lets it drive on; clicking a numbered waypoint takes over and sends it round. Try Stop on UGV #1 and then Continue. Take over UGV #2 with a waypoint.";
+                "Both lights are yellow: each vehicle has spotted something ahead. It slows down and judges it but keeps driving: it will only stop by itself if it cannot get past. You decide what to do. Stop halts a vehicle where it is while you look; Continue lets it drive on; clicking a numbered waypoint takes over and sends it round. Any waypoint works; they all lead round the obstacle. Try Stop on UGV #1 and then Continue. Take over UGV #2 with a waypoint.";
         else if (u1.state === "processing" && u1.reachedObstacle)
             text = "UGV #1 judged it could get through: it is driving on through the debris, and its light turns green once it is past.";
         else if (resolved("UGV1"))

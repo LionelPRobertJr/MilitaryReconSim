@@ -173,8 +173,8 @@ export function buildModule(set, defs = DEFAULT_DEFS) {
                 id: "role",
                 title: "Your role",
                 paragraphs: [
-                    "In the mission you supervise two unmanned ground vehicles (UGVs) on an off-road reconnaissance route. When a UGV sees something on the track ahead, its light turns yellow while it judges it. If it judges it can get through, it drives on and the light turns green again. If not, it stops and waits for you, which costs points. Taking over when it could have got through by itself also costs points.",
-                    "This short module shows you when to take over. Taking over means sending the UGV around what is in its way: click one of the waypoints shown beside it in the UGV's camera view. You can do this as soon as it appears, and you can also press Stop to halt a UGV while you look. Take your time: the mission starts after it."
+                    "In the mission you supervise two unmanned ground vehicles (UGVs) on an off-road reconnaissance route. When a UGV sees something on the track ahead, its light turns yellow while it judges it. If it judges it can get through, it drives on and the light turns green again. If not, it stops and waits for you, which costs points. If it misjudges something, it drives on into it and gets stuck (−100 points); after 30 s it waits for you. Taking over when it could have got through by itself also costs points.",
+                    "This short module shows you when to take over. Taking over means sending the UGV around what is in its way: click one of the waypoints shown beside it in the UGV's camera view. Any waypoint works; they all lead round the obstacle. You can do this as soon as it appears, and you can also press Stop to halt a UGV while you look. Take your time: the mission starts after it."
                 ],
                 examples: []
             },

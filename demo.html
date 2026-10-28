@@ -67,44 +67,69 @@
   </div>
 
   <div class="overlay" id="start-overlay" hidden>
-    <div class="sheet">
+    <div class="sheet brief">
+      <p class="brief-eyebrow">Mission briefing</p>
       <h1>Route reconnaissance</h1>
-      <p class="lead">You supervise two unmanned ground vehicles, UGV #1 and UGV #2. Each drives its own off-road route from the staging area to the objective. Your goal is to get both vehicles to the objective as quickly as possible.</p>
-      <div class="cols">
-        <div>
-          <h2>What you see</h2>
-          <p><b>Two vehicle panels</b>, side by side. Each shows the vehicle's status light, a short message, and its forward camera: the view through its windscreen as it drives.</p>
-          <p><b>Spot Report</b> (bottom right): count the vehicles and people in each image and submit. A few seconds after you submit, a new image appears; an image you leave is replaced after 20 seconds. There are as many as you have time for, and each correct count earns points.</p>
-          <h2>Status lights</h2>
-          <ul class="legend">
-            <li><i class="lamp s-auto"></i>Green: driving its route</li>
-            <li><i class="lamp s-proc"></i>Yellow: something on the track ahead; the vehicle slows down and judges it while it keeps driving</li>
-            <li><i class="lamp s-help"></i>Red: stopped at something it cannot get past, waiting for you</li>
-            <li><i class="lamp s-op"></i>Blue: following the waypoints you chose</li>
-            <li><i class="lamp s-hold"></i>Grey: stopped by you, waiting at a section line, stuck, or at the objective</li>
-          </ul>
-        </div>
-        <div>
-          <h2>What you can do</h2>
-          <p>When a vehicle spots something on the track ahead, its light turns yellow, a short alert appears in its view, and it slows down to judge it. It keeps driving: it stops by itself only at something it cannot get past, and that costs points. You decide what to do:</p>
-          <dl class="actions-legend">
-            <dt>Stop</dt><dd>Halts the vehicle where it is, so you can look before deciding. No points lost, only time.</dd>
-            <dt>Continue</dt><dd>Lets a vehicle you stopped drive on by itself.</dd>
-            <dt>Take over</dt><dd>Click one of the numbered waypoints beside the obstacle in the vehicle's view. It follows them round the obstacle, more slowly, then carries on by itself. If the vehicle could have got through by itself, taking over costs points.</dd>
+      <p class="lead">You supervise two unmanned ground vehicles, <b>UGV #1</b> and <b>UGV #2</b>. Each drives its own off-road route from the staging area to the objective. Your goal is to get both vehicles to the objective as quickly as possible.</p>
+
+      <div class="brief-alert" role="note">
+        <span class="brief-alert-mark" aria-hidden="true">!</span>
+        <p><b>Watch for this.</b> If a vehicle misjudges something, it drives on into it and <b>gets stuck (−100 points)</b>. After 30 seconds it waits for you to send it round.</p>
+      </div>
+
+      <div class="brief-grid">
+        <section class="brief-card">
+          <h2><span class="brief-step">1</span>Your screen</h2>
+          <dl class="brief-defs">
+            <dt>Vehicle panels</dt><dd>One per vehicle, side by side: its status light, a short message, and its forward camera, the view through its windscreen.</dd>
+            <dt>Spot Report</dt><dd>Bottom right. Count the vehicles and people in each image and submit. A new image appears a few seconds after you submit; one you leave is replaced after 20 seconds.</dd>
           </dl>
-          <p>At each section line the vehicles wait for each other, and the mission pauses for a short check-in. The mission ends at 24:00, even if a vehicle has not reached the objective.</p>
-          <h2>Points</h2>
-          <ul class="points">
-            <li><b>+200</b> per vehicle that reaches the objective</li>
-            <li><b>+1</b> per second left, if both arrive before 24:00</li>
-            <li><b>+2</b> per correct Spot Report count</li>
-            <li><b>−50</b> each time a vehicle stops by itself and waits for you (pressing Stop costs nothing)</li>
-            <li><b>−30</b> each time you take over at something the vehicle could have got through by itself</li>
-            <li><b>−100</b> if a vehicle gets stuck</li>
+          <h3>Status lights</h3>
+          <ul class="legend">
+            <li><i class="lamp s-auto"></i><span><b>Green</b> driving its route</span></li>
+            <li><i class="lamp s-proc"></i><span><b>Yellow</b> something ahead: it slows down and judges it, still driving</span></li>
+            <li><i class="lamp s-help"></i><span><b>Red</b> stopped at something it cannot get past, waiting for you</span></li>
+            <li><i class="lamp s-op"></i><span><b>Blue</b> following the waypoints you chose</span></li>
+            <li><i class="lamp s-hold"></i><span><b>Grey</b> stopped by you, stuck, waiting at a section line, or at the objective</span></li>
           </ul>
-          <h2>Bonus</h2>
+          <h3>Timing</h3>
+          <p>The route has three sections. At each section line the vehicles wait for each other and the mission pauses for a short check-in. The mission ends at 24:00, even if a vehicle has not reached the objective.</p>
+        </section>
+
+        <section class="brief-card">
+          <h2><span class="brief-step">2</span>At an obstacle</h2>
+          <p>The light turns <b>yellow</b> and a short alert appears in the view. The vehicle slows down to judge what it sees, but keeps driving. Then one of three things happens:</p>
+          <ul class="brief-outcomes">
+            <li><i class="lamp s-auto"></i><span>It can get through: it drives on and the light turns green.</span></li>
+            <li><i class="lamp s-help"></i><span>It cannot get past: it stops and waits for you <b>(−50)</b>.</span></li>
+            <li class="brief-hot"><i class="lamp s-hold"></i><span>It misjudges it: it drives into it and gets stuck <b>(−100)</b>.</span></li>
+          </ul>
+          <h3>What you can do</h3>
+          <dl class="brief-controls">
+            <dt><span class="key stop"></span>Stop</dt><dd>Halts the vehicle where it is while you look. No points lost, only time.</dd>
+            <dt><span class="key go"></span>Continue</dt><dd>Lets a vehicle you stopped drive on by itself.</dd>
+            <dt><span class="key wp">1</span>Take over</dt><dd>Click a numbered waypoint in the vehicle's view. It follows them round the obstacle, more slowly, then carries on by itself. <b class="brief-mark">Any waypoint works; they all lead round the obstacle.</b> If the vehicle could have got through by itself, taking over costs points.</dd>
+          </dl>
+        </section>
+
+        <section class="brief-card">
+          <h2><span class="brief-step">3</span>Points and bonus</h2>
+          <table class="brief-points">
+            <caption>You earn</caption>
+            <tr><td>+200</td><td>per vehicle that reaches the objective</td></tr>
+            <tr><td>+1</td><td>per second left, if both arrive before 24:00</td></tr>
+            <tr><td>+2</td><td>per correct Spot Report count</td></tr>
+          </table>
+          <table class="brief-points brief-loss">
+            <caption>You lose</caption>
+            <tr><td>−50</td><td>each time a vehicle stops by itself and waits for you</td></tr>
+            <tr><td>−30</td><td>each time you take over at something the vehicle could have got through by itself</td></tr>
+            <tr><td>−100</td><td>each time a vehicle gets stuck</td></tr>
+          </table>
+          <p class="brief-note">Pressing Stop costs nothing.</p>
+          <h3>Bonus</h3>
           <p id="bonus-rules"></p>
-        </div>
+        </section>
       </div>
       <div class="buttons">
         <button id="btn-tutorial" class="primary">Start the interface tutorial</button>

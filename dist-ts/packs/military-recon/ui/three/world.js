@@ -532,52 +532,94 @@ export class World3D {
         this.scene.add(place(flat));
         this.bridge = { eventId: ev.id, ravine, flat };
     }
-    /** A timber deck across the ravine from x0 to x1 (local), centred at lateral z; damaged: planks missing mid-span. */
+    /**
+     * A timber deck across the ravine from x0 to x1 (local), centred at lateral z. Damaged (Oct 28, 2026, user: make it
+     * "clearer and earlier that it is out"; it was a few missing planks that showed only once the UGV was on it): the
+     * middle of the span has given way. The deck sags into a V, its planks cracked, darker and askew; one half of the
+     * deck has fallen through there, so the ravine shows below it; both railings are broken there, one hanging down into the ravine. Planks remain along the other wheel
+     * path, so to the UGV it is a surface whose strength it cannot judge.
+     */
     bridgeDeck(x0, x1, z, damaged) {
         const g = new THREE.Group();
         const plank = new THREE.BoxGeometry(0.32, 0.08, 3.6);
         const wood = new THREE.MeshStandardMaterial({ color: "#8a7a63", roughness: 0.95 });
         const dark = new THREE.MeshStandardMaterial({ color: "#6d5f4c", roughness: 0.95 });
-        for (let x = x0; x < x1; x += 0.36) {
-            // Mid-span damage, deliberately modest: a few planks gone on the left half, one sagging (tune in the pilot).
-            const gap = damaged && x > 6.0 && x < 7.2;
-            const m = new THREE.Mesh(plank, Math.round(x / 0.36) % 3 ? wood : dark);
-            m.castShadow = true;
-            m.receiveShadow = true;
-            if (gap) {
-                m.scale.z = 0.48;
-                m.position.set(x, 0.2 - (x > 6.5 && x < 6.9 ? 0.12 : 0), z + 0.94);
-                if (x > 6.4 && x < 6.8)
-                    m.rotation.x = 0.12;
-            }
-            else
+        const rotten = new THREE.MeshStandardMaterial({ color: "#4e4334", roughness: 1 });
+        const B0 = 4.6;
+        const B1 = 8.8;
+        const mid = (B0 + B1) / 2;
+        const SAG = 0.75;
+        // The sag at x: 0 at the ends of the failed section, deepest in the middle (a V with rounded shoulders).
+        const sagAt = (x) => (x <= B0 || x >= B1 ? 0 : SAG * (1 - Math.abs(x - mid) / ((B1 - B0) / 2)) ** 0.8);
+        const slope = (x) => (x <= B0 || x >= B1 ? 0 : (x < mid ? -1 : 1) * (SAG / ((B1 - B0) / 2)));
+        let k = 0;
+        for (let x = x0; x < x1; x += 0.36, k++) {
+            const broken = damaged && x > B0 && x < B1;
+            if (!broken) {
+                const m = new THREE.Mesh(plank, k % 3 ? wood : dark);
+                m.castShadow = true;
+                m.receiveShadow = true;
                 m.position.set(x, 0.2, z);
-            g.add(m);
+                g.add(m);
+                continue;
+            }
+            // Cracked in two across its length, the halves offset and tilted; every fourth one's outer half is gone.
+            const y = 0.2 - sagAt(x);
+            const tilt = Math.atan(slope(x));
+            for (const half of [-1, 1]) {
+                // One half of the deck has fallen through over most of the failed section, so the ravine shows below it;
+                // elsewhere every fourth plank's outer half is gone.
+                if (half < 0 && (k % 4 === 0 || (x > B0 + 0.5 && x < B1 - 0.5)))
+                    continue;
+                const m = new THREE.Mesh(plank, k % 2 ? rotten : dark);
+                m.scale.z = 0.47;
+                m.position.set(x + half * 0.03, y - (half > 0 ? 0.05 : 0), z + half * 0.93);
+                m.rotation.set(half * 0.06 * ((k % 3) - 1), 0, tilt + half * 0.04);
+                m.castShadow = true;
+                g.add(m);
+            }
         }
-        const beam = new THREE.BoxGeometry(x1 - x0, 0.45, 0.3);
+        // The two beams under the deck; on the damaged side they break and follow the sag.
         for (const dz of [-1.3, 1.3]) {
-            const b = new THREE.Mesh(beam, dark);
-            b.position.set((x0 + x1) / 2, -0.12 + (damaged && dz < 0 ? -0.04 : 0), z + dz);
-            b.castShadow = true;
-            g.add(b);
+            const segs = damaged ? [[x0, B0], [B0, mid], [mid, B1], [B1, x1]] : [[x0, x1]];
+            for (const [a, b] of segs) {
+                const len = Math.hypot(b - a, sagAt(b) - sagAt(a));
+                const bm = new THREE.Mesh(new THREE.BoxGeometry(len, 0.45, 0.3), dark);
+                bm.position.set((a + b) / 2, -0.12 - (sagAt(a) + sagAt(b)) / 2, z + dz);
+                bm.rotation.z = Math.atan2(sagAt(a) - sagAt(b), b - a);
+                bm.castShadow = true;
+                g.add(bm);
+            }
         }
         const post = new THREE.BoxGeometry(0.12, 1.0, 0.12);
         const railMat = new THREE.MeshStandardMaterial({ color: "#4d4b46", roughness: 0.9 });
         for (const side of [-1, 1]) {
             for (let x = x0 + 0.3; x < x1; x += 2) {
-                if (damaged && side < 0 && x > 5.4 && x < 7.8)
-                    continue; // one railing broken where the deck is damaged
+                if (damaged && x > B0 - 0.4 && x < B1 + 0.4)
+                    continue; // both railings gone where the deck failed
                 const m = new THREE.Mesh(post, railMat);
                 m.position.set(x, 0.7, z + side * 1.85);
                 m.castShadow = true;
                 g.add(m);
             }
-            const segs = damaged && side < 0 ? [[x0, 5.4], [7.8, x1]] : [[x0, x1]];
+            const segs = damaged ? [[x0, B0 - 0.4], [B1 + 0.4, x1]] : [[x0, x1]];
             for (const [a, b] of segs) {
                 const rail = new THREE.Mesh(new THREE.BoxGeometry(b - a, 0.08, 0.08), railMat);
                 rail.position.set((a + b) / 2, 1.15, z + side * 1.85);
                 rail.castShadow = true;
                 g.add(rail);
+            }
+            if (damaged) {
+                // A broken length of railing still attached at one end, hanging down over the edge.
+                const len = 2.6;
+                const hang = new THREE.Mesh(new THREE.BoxGeometry(len, 0.08, 0.08), railMat);
+                const ax = side < 0 ? B0 - 0.4 : B1 + 0.4;
+                const dir = side < 0 ? 1 : -1;
+                const ang = 0.75;
+                hang.position.set(ax + dir * (len / 2) * Math.cos(ang), 1.15 - (len / 2) * Math.sin(ang), z + side * 2.0);
+                hang.rotation.z = dir * -ang;
+                hang.castShadow = true;
+                g.add(hang);
             }
         }
         // Piers down the ravine walls at each end.
