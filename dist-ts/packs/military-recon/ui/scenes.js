@@ -296,7 +296,8 @@ const OBJECTS = {
             [300, 96, 46, 30, false], [96, 140, 52, 26, false], [168, 142, 70, 28, true], [236, 138, 54, 26, false], [150, 90, 80, 30, false],
             [40, 84, 50, 24, false], [280, 80, 50, 22, false], [112, 128, 34, 20, true], [206, 124, 36, 20, true]
         ];
-        return `<rect y="${HORIZON - 30}" width="${W}" height="78" fill="#b5b5ae" opacity="0.55"/>
+        // Oct 28, 2026: denser, so neither the track nor the trees beyond show through (as in the 3D view).
+        return `<rect y="${HORIZON - 34}" width="${W}" height="84" fill="#b0b0a9" opacity="0.92"/>
       ${puffs.map(([x, y, rx, ry, dark]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="url(#${dark ? "rc-puff-dark" : "rc-puff"})"/>`).join("")}
       <path d="M0 150 Q 60 138 120 146 T 240 142 T 320 148" stroke="#c9c9c4" stroke-width="7" fill="none" opacity="0.35" stroke-linecap="round"/>`;
     },
@@ -329,15 +330,30 @@ const OBJECTS = {
         };
         return band(140, 146, "#8a7352") + band(146, 152, "#76603f") + band(152, 158, "#8a7352");
     },
-    low_berm: () => `<path d="M0 156 C 60 140 120 136 160 136 C 200 136 260 140 320 156 L 320 166 L 0 166 Z" fill="#87a066"/>
-     <path d="M0 156 C 60 140 120 136 160 136 C 200 136 260 140 320 156" stroke="#6f8a52" stroke-width="2" fill="none"/>
-     <path d="M70 146 l-2 -5 M110 140 l1 -5 M210 140 l-1 -5 M250 146 l2 -5" stroke="#5d7a45" stroke-width="1.4"/>`,
+    // A low bank grassed over with pale, dry grass, the two wheel ruts worn bare across it (Oct 28, 2026, as in 3D).
+    low_berm: () => {
+        const ruts = [0.3, 0.7]
+            .map((f) => {
+            const [a, b] = trackEdges(150);
+            const x = a + (b - a) * f;
+            return `<path d="M${x - 9} 137 Q ${x} 135 ${x + 9} 137 L ${x + 12} 164 L ${x - 12} 164 Z" fill="#9c8462"/>`;
+        })
+            .join("");
+        return `<path d="M0 156 C 60 140 120 136 160 136 C 200 136 260 140 320 156 L 320 166 L 0 166 Z" fill="#c3ba7c"/>
+     <path d="M0 156 C 60 140 120 136 160 136 C 200 136 260 140 320 156" stroke="#a99f62" stroke-width="2" fill="none"/>
+     ${ruts}
+     <path d="M40 150 l-2 -6 M70 146 l-2 -6 M110 140 l1 -6 M210 140 l-1 -6 M250 146 l2 -6 M285 150 l2 -6" stroke="#9a9454" stroke-width="1.5"/>`;
+    },
 };
-/** The critical scene: the track crosses a ravine on a narrow vehicle bridge; deck intact at the approach, a gap mid-span. */
+/**
+ * The critical scene: the track crosses a ravine on a narrow vehicle bridge whose middle has given way (Oct 28, 2026,
+ * as in 3D): the deck sags, half of it has fallen through so the ravine shows below, and both railings are broken
+ * there, one hanging down. Planks remain along the other wheel path.
+ */
 function damagedBridge() {
-    const [gl0, gr0] = trackEdges(120);
-    const [gl1, gr1] = trackEdges(138);
     const deck = "#8a7a63";
+    const Y0 = 116; // the failed section, top and bottom (screen y)
+    const Y1 = 142;
     const planks = (y0, y1) => {
         let out = "";
         for (let y = y0; y < y1; y += 2.5 + (y - VP.y) * 0.09) {
@@ -349,30 +365,48 @@ function damagedBridge() {
     const rails = (side) => {
         let out = "";
         for (let y = VP.y + 4; y < H; y += 4 + (y - VP.y) * 0.18) {
-            if (side === 0 && y > 120 && y < 136)
-                continue; // one railing broken where the deck is damaged
+            if (y > Y0 - 4 && y < Y1 + 4)
+                continue; // both railings broken where the deck failed
             const e = trackEdges(y)[side];
             const h = 2 + (y - VP.y) * 0.14;
             out += `<rect x="${e + (side ? 1 : -2)}" y="${y - h}" width="${0.8 + (y - VP.y) * 0.02}" height="${h}" fill="#4d4b46"/>`;
         }
-        const a = trackEdges(VP.y)[side];
-        const b = trackEdges(H)[side];
-        const hb = 2 + (H - VP.y) * 0.14;
-        return out + `<path d="M${a} ${VP.y - 2} L ${b} ${H - hb}" stroke="#4d4b46" stroke-width="1.6"/>`;
+        const top = (y) => [trackEdges(y)[side], y - (2 + (y - VP.y) * 0.14)];
+        const [ax, ay] = top(VP.y);
+        const [bx, by] = top(Y0 - 4);
+        const [cx, cy] = top(Y1 + 4);
+        const [dx, dy] = top(H);
+        // The railing in two pieces; the near piece's broken end hangs down on the left.
+        const hang = side === 0 ? `<path d="M${cx} ${cy} L ${cx - 16} ${cy + 26}" stroke="#4d4b46" stroke-width="2"/>` : "";
+        return out + `<path d="M${ax} ${ay} L ${bx} ${by} M${cx} ${cy} L ${dx} ${dy}" stroke="#4d4b46" stroke-width="1.6"/>${hang}`;
     };
+    // The failed section: the right half of the deck sags (darker, cracked planks); the left half is gone.
+    const [l0, r0] = trackEdges(Y0);
+    const [l1, r1] = trackEdges(Y1);
+    const m0 = l0 + (r0 - l0) * 0.48;
+    const m1 = l1 + (r1 - l1) * 0.5;
+    const sag = 5;
+    const cracks = [0.25, 0.5, 0.75]
+        .map((t) => {
+        const y = Y0 + (Y1 - Y0) * t;
+        const [l, r] = trackEdges(y);
+        const m = l + (r - l) * 0.49;
+        return `<path d="M${m} ${y + sag * Math.sin(Math.PI * t)} L ${r} ${y + sag * Math.sin(Math.PI * t) - 1}" stroke="#2f2a22" stroke-width="1.1"/>`;
+    })
+        .join("");
     return `${sky()}
     <rect y="${HORIZON}" width="${W}" height="${H - HORIZON}" fill="url(#rc-gnd-open)"/>${groundTexture("open", 7)}
     <path d="M60 ${HORIZON + 2} L 260 ${HORIZON + 2} L 180 ${H} L 140 ${H} Z" fill="#4a3f33"/>
     <path d="M60 ${HORIZON + 2} L 110 ${HORIZON + 2} L 150 ${H} L 140 ${H} Z" fill="#5c4f3f"/>
     <path d="M210 ${HORIZON + 2} L 260 ${HORIZON + 2} L 180 ${H} L 170 ${H} Z" fill="#3d342b"/>
     <path d="M118 ${HORIZON + 30} L 202 ${HORIZON + 30} L 168 ${H} L 152 ${H} Z" fill="#3f6f84"/>
-    <polygon points="${trackPolygon(VP.y, 120)}" fill="${deck}"/>${planks(VP.y + 1, 120)}
-    <polygon points="${trackPolygon(120, 138)}" fill="${deck}"/>${planks(120, 138)}
-    <!-- Mid-span damage, deliberately modest: a few planks missing on the left half of the deck, a dark gap
-         and a slight sag. Visible on a careful look, not at a glance (tune in the pilot). -->
-    <path d="M${gl0 + 2} 125 l6 -1.5 l5 2 l6 -1 l5 1.5 l6 -1.2 l4 1 L ${gl0 + (gr0 - gl0) * 0.5} 125.5 L ${gl1 + (gr1 - gl1) * 0.46} 132 l-5 1.2 l-6 -1 l-6 1.5 l-5 -1 l-6 1.3 L ${gl1 + 3} 132 Z" fill="#26231f"/>
-    <path d="M${gl0 + (gr0 - gl0) * 0.5} 125.5 L ${gr0 - 6} 126.5 M${gl1 + (gr1 - gl1) * 0.46} 132 L ${gr1 - 8} 131" stroke="#5f5242" stroke-width="1.2" opacity="0.8"/>
-    <polygon points="${trackPolygon(138, H)}" fill="${deck}"/>${planks(139, H)}
+    <polygon points="${trackPolygon(VP.y, Y0)}" fill="${deck}"/>${planks(VP.y + 1, Y0)}
+    <path d="M${m0} ${Y0} L ${r0} ${Y0} L ${r1} ${Y1} L ${m1} ${Y1} Z" fill="#5a4e3d"/>
+    <path d="M${m0} ${Y0} Q ${(m0 + m1) / 2 + 2} ${(Y0 + Y1) / 2 + sag} ${m1} ${Y1}" stroke="#2f2a22" stroke-width="1.4" fill="none"/>
+    ${cracks}
+    <path d="M${l0} ${Y0} l5 2 l6 -1 l5 2 L ${m0} ${Y0 + 1} Q ${(m0 + m1) / 2 + 2} ${(Y0 + Y1) / 2 + sag} ${m1} ${Y1} l-6 -2 l-7 1 l-6 -2 L ${l1} ${Y1} Z" fill="#1d1a16"/>
+    <path d="M${(l0 + m0) / 2} ${(Y0 + Y1) / 2 + 2} L ${(l1 + m1) / 2 - 4} ${Y1 - 3}" stroke="#3f6f84" stroke-width="2" opacity="0.8"/>
+    <polygon points="${trackPolygon(Y1, H)}" fill="${deck}"/>${planks(Y1 + 1, H)}
     ${rails(0)}${rails(1)}`;
 }
 /** Off-road: the side track a UGV follows on a bypass. */
