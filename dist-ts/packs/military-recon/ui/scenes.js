@@ -547,7 +547,7 @@ export function sceneLabel(sceneId) {
         tall_reeds: "Camera view: tall reeds filling the track",
         damaged_bridge: "Camera view: a bridge over a ravine",
         small_debris_b: "Camera view: twigs and pebbles on the track",
-        fallen_tree_b: "Camera view: a fallen pine across the track",
+        fallen_tree_b: "Camera view: a fallen grey-barked tree across the track",
         fallen_pole: "Camera view: a pole across the track",
         stalled_tractor: "Camera view: a tractor across the track",
         flat_litter: "Camera view: flat litter on the track",

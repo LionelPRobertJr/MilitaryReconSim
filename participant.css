@@ -10,7 +10,8 @@
 .q-item.q-bad { border-color: var(--s-help, #c33); box-shadow: 0 0 0 2px rgba(214, 69, 69, 0.18); }
 .q-n { color: var(--ink-soft, #666); font-weight: 500; margin-right: 2px; }
 .q-desc { font-size: 14px !important; color: var(--ink-soft, #555); margin: 2px 0 8px !important; }
-.q-missing { color: var(--s-help, #c33); font-size: 14px !important; margin: 0 !important; }
+.q-missing { color: var(--s-help, #c33); font-size: 14px !important; margin: 0 !important; min-height: 1.4em; }
+.q-missing.q-ok { visibility: hidden; }
 
 /* Likert: a row of numbered choices with end anchors. */
 .q-scale { display: grid; grid-template-columns: repeat(var(--points), minmax(0, 1fr)); gap: 6px; margin-top: 8px; }

@@ -7,7 +7,7 @@ export const DEFAULT_DEPLOYMENT = {
     assignEndpoint: "/api/participant/assign",
     uploadEndpoint: "/api/participant/upload",
     platform: DEFAULT_PLATFORM,
-    payment: { currency: "$", basePayment: "the amount shown on the study page", bonusPerPoint: 0.001, bonusCap: 2 },
+    payment: { currency: "$", basePayment: "the amount shown on the study page", bonusPerPoint: 0.001, bonusCap: 2, bonusFloor: 1 },
     minWindow: { width: 1280, height: 720 }
 };
 export async function loadDeployment(url = "./deployment.recon.json") {

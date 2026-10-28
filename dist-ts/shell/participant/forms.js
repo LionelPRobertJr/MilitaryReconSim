@@ -53,10 +53,27 @@ export class PageRunner {
         this.show(`${spec.kicker ? `<p class="t-progress">${esc(spec.kicker)}</p>` : ""}<h1>${esc(spec.title)}</h1>
       ${(spec.intro ?? []).map((p) => `<p class="t-text">${p}</p>`).join("")}
       <form class="q-form" novalidate>${spec.items.map((it, i) => itemHtml(it, i + 1)).join("")}
-        <p class="q-missing" hidden>Please answer the highlighted question(s).</p>
+        <p class="q-missing q-ok" role="alert">Please answer the highlighted question(s).</p>
         <div class="buttons"><button class="primary" type="submit">${esc(spec.submitLabel)}</button></div></form>`);
         const form = this.sheet.querySelector("form");
         const t0 = this.log.now();
+        const note = form.querySelector(".q-missing");
+        // The highlight goes from a question as soon as it is answered (agent testing, Oct 28, 2026: it stayed red
+        // until the next submit). The note keeps its space, so the page does not jump when it appears.
+        const clear = (e) => {
+            const fs = e.target.closest("[data-item]");
+            if (fs)
+                fs.classList.remove("q-bad");
+            if (!form.querySelector(".q-bad"))
+                note.classList.add("q-ok");
+        };
+        form.addEventListener("input", clear);
+        // The second click of a double click on the previous page's button lands on this page's button: ignore it.
+        form.addEventListener("click", (e) => {
+            if (e.detail > 1 && e.target.closest("button[type=submit]"))
+                e.preventDefault();
+        }, true);
+        form.addEventListener("change", clear);
         const answers = await new Promise((resolve) => {
             form.addEventListener("submit", (e) => {
                 e.preventDefault();
@@ -72,9 +89,13 @@ export class PageRunner {
                 }
                 for (const fs of form.querySelectorAll("[data-item]"))
                     fs.classList.toggle("q-bad", missing.includes(fs.dataset.item));
-                form.querySelector(".q-missing").hidden = missing.length === 0;
+                note.classList.toggle("q-ok", missing.length === 0);
                 if (missing.length) {
-                    form.querySelector(`[data-item="${missing[0]}"]`)?.scrollIntoView({ block: "center" });
+                    const badNumber = spec.items.find((it) => it.kind === "number" && missing.includes(it.id) && out[it.id] !== "");
+                    note.textContent = badNumber && badNumber.kind === "number" ? `Please enter a whole number from ${badNumber.min} to ${badNumber.max} for the highlighted question.` : "Please answer the highlighted question(s).";
+                    const first = form.querySelector(`[data-item="${missing[0]}"]`);
+                    first?.scrollIntoView({ block: "center" });
+                    first?.querySelector("input, textarea, select")?.focus({ preventScroll: true });
                     return;
                 }
                 resolve(out);

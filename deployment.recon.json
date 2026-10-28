@@ -14,7 +14,8 @@
     "currency": "$",
     "basePayment": "the amount shown on the study page",
     "bonusPerPoint": 0.001,
-    "bonusCap": 2
+    "bonusCap": 2,
+    "bonusFloor": 1
   },
   "minWindow": {
     "width": 1280,

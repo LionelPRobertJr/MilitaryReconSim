@@ -140,7 +140,7 @@ export const MANIPULATION_PAGE = {
 export const CRITICAL_REPORT_PAGE = {
     id: "critical_report",
     title: "The bridge in Section B",
-    intro: ["In Section B, UGV1 came to a narrow timber bridge."],
+    intro: ["In Section B, UGV #1 came to a narrow timber bridge."],
     eventType: "critical_report_response",
     submitLabel: "Finish",
     items: [{ kind: "text", id: "critical_report", text: "Describe what happened at the bridge, and why you acted as you did.", rows: 6 }]
@@ -148,22 +148,44 @@ export const CRITICAL_REPORT_PAGE = {
 const money = (p, x) => `${p.currency}${x.toFixed(2)}`;
 /** Bonus rules, identical words in every condition (brief section 8), shown before the mission. */
 export function bonusRulesText(p) {
-    return `Besides the payment for taking part (${p.basePayment}), you earn a bonus from your mission score: ${money(p, p.bonusPerPoint * 100)} for every 100 points, up to ${money(p, p.bonusCap)}. The score counts only mission outcomes, the same way for everyone.`;
+    return `Besides the payment for taking part (${p.basePayment}), you earn a bonus from your mission score: ${money(p, p.bonusPerPoint * 100)} for every 100 points, worked out to the cent (so 1 cent for every ${Math.round(0.01 / p.bonusPerPoint)} points), up to ${money(p, p.bonusCap)}. The score counts only mission outcomes, the same way for everyone.`;
 }
-export function bonusFor(score, p) {
+/** The bonus the score earns under the stated rule (before the floor). */
+export function bonusEarned(score, p) {
     return Math.round(Math.min(p.bonusCap, Math.max(0, score * p.bonusPerPoint)) * 100) / 100;
 }
-/** "400 for reaching the objective, 512 for time left, 85 from the Spot Report, −100 penalties" (how a score was made up). */
-export function scoreBreakdownText(b) {
+/** The bonus paid: what the score earns, but at least the floor. */
+export function bonusFor(score, p) {
+    return Math.max(p.bonusFloor ?? 0, bonusEarned(score, p));
+}
+export function scoreBreakdownText(b, counts) {
     const parts = [`${b.objective} for reaching the objective`, `${b.timeBonus} for time left`, `${b.spotReport} from the Spot Report`];
-    if (b.penalties)
-        parts.push(`${b.penalties < 0 ? "−" : ""}${Math.abs(b.penalties)} for stops, getting stuck and unneeded take-overs`);
+    if (b.penalties) {
+        const total = `${b.penalties < 0 ? "−" : ""}${Math.abs(b.penalties)}`;
+        // Itemised (agent testing, Oct 28, 2026: players could not tell which decisions had cost them points).
+        const items = counts
+            ? [
+                counts.stops ? `${counts.stops} × stopped and waiting (−${counts.each.stop} each)` : "",
+                counts.immobilisations ? `${counts.immobilisations} × stuck (−${counts.each.stuck} each)` : "",
+                counts.unnecessaryReroutes ? `${counts.unnecessaryReroutes} × take-over not needed (−${counts.each.takeover} each)` : ""
+            ].filter(Boolean)
+            : [];
+        parts.push(items.length ? `${total} in penalties: ${items.join("; ")}` : `${total} for stops, getting stuck and unneeded take-overs`);
+    }
     return parts.join(", ");
 }
 export function debriefHtml(opts) {
-    return `<p class="t-text">Thank you for taking part. Your mission score was <b>${opts.score}</b>${opts.breakdown ? ` (${opts.breakdown})` : ""}, which earns a bonus of <b>${opts.bonus}</b>.</p>
+    const raised = opts.floor && opts.earned && opts.earned !== opts.bonus;
+    const scoreLine = raised
+        ? `Thank you for taking part. Your mission score was <b>${opts.score}</b>${opts.breakdown ? ` (${opts.breakdown})` : ""}, which earns ${opts.earned}. Every participant receives a bonus of at least ${opts.floor} (see below), so your bonus is <b>${opts.bonus}</b>.`
+        : `Thank you for taking part. Your mission score was <b>${opts.score}</b>${opts.breakdown ? ` (${opts.breakdown})` : ""}, which earns a bonus of <b>${opts.bonus}</b>.`;
+    const fairness = opts.floor
+        ? `<p class="t-text">Some of these trainings were deliberately imperfect. For example, one group was told to take over whenever a vehicle met any obstacle, which cost points for take-overs the vehicles did not need. Because the training you received was not your choice, every participant receives a bonus of at least ${opts.floor}, whatever their score.</p>`
+        : "";
+    return `<p class="t-text">${scoreLine}</p>
   <h2>About this study</h2>
   <p class="t-text">We are studying how people decide when to take over from robots they supervise. Different participants received different training about when the vehicles need help.</p>
+  ${fairness}
   <p class="t-text">Several obstacles in the mission were deliberately left out of everyone's training: the muddy flooded dips, the tall reeds, the smoke, the low mounds, the thin fallen saplings, the stream crossing and the damaged timber bridge in Section B. Some of them the vehicles could get through by themselves and some they could not judge. We wanted to see how people handle obstacles their training did not cover, so they were not mentioned before. Whatever you did there is useful to us; there was no trick to spot.</p>
   <p class="t-text">Please do not tell anyone who might take part about these obstacles, since that would change their results.</p>
   <p class="placeholder"><b>Placeholder:</b> IRB-approved debriefing text and research-team contact details go here.</p>

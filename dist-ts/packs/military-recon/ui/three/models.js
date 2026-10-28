@@ -546,27 +546,56 @@ function reeds(r) {
     return g;
 }
 function berm() {
-    // A low earth mound across the track (held back, Oct 10, 2026): an uneven heap of bare earth with stones and a
-    // few tufts of grass, so it reads as a pile of earth; but only about 0.35 m high, gently sloped.
+    // A low earth bank across the track (held back, Oct 10, 2026), only about 0.4 m high and gently sloped. Since
+    // Oct 28, 2026 it is grassed over (pale, dry grass, so it stands out from the field), with the two wheel ruts worn bare across it: in agent testing the earlier bare-earth
+    // heap looked like the muddy flooded dip (both a flat brown oval at a distance). Now it reads as a pale grassy hump
+    // the track climbs over, against the dip's dark, flat water.
     const g = new THREE.Group();
     const r = rng(77);
-    const dome = mesh(lumpy(1, 4, 0.16, 41), new THREE.MeshStandardMaterial({ map: rockTexture(), color: "#c9b48f", roughness: 1 }));
-    dome.scale.set(1.9, 0.5, 6.2);
-    g.add(tag(dome, "solid"));
-    const blade = new THREE.ConeGeometry(0.05, 0.4, 4);
-    for (let i = 0; i < 60; i++) {
-        const z = (r() - 0.5) * 11;
-        const x = (r() - 0.5) * 2.2;
-        const top = 0.48 * Math.max(0, 1 - (x / 1.7) ** 2) * Math.max(0, 1 - (z / 6.2) ** 2) ** 0.5;
-        const t = mesh(blade, std(["#6d8746", "#7f9a52", "#8a9a5a"][i % 3]), false);
-        t.position.set(x, top + 0.15, z);
-        t.rotation.set((r() - 0.5) * 0.5, 0, (r() - 0.5) * 0.5);
-        g.add(tag(t, "solid"));
+    const geom = lumpy(1, 4, 0.12, 41);
+    const pos = geom.attributes.position;
+    const cols = [];
+    const c = new THREE.Color();
+    const push = (rr, gg, bb) => {
+        c.setRGB(rr, gg, bb, THREE.SRGBColorSpace); // vertex colours are linear: convert from the sRGB values below
+        cols.push(c.r, c.g, c.b);
+    };
+    const n = valueNoise(43);
+    const RUT = [-0.75, 0.75]; // wheel ruts across the bank (world z, m)
+    const inRut = (zWorld, w = 0.32) => RUT.some((c) => Math.abs(zWorld - c) < w);
+    for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+        const v = n(x * 3 + 7, z * 3 + 7);
+        if (inRut(z * 6.2) && y > -0.05)
+            push(0.55 + v * 0.08, 0.43 + v * 0.06, 0.3 + v * 0.05); // bare earth
+        else
+            push(0.64 + v * 0.08, 0.63 + v * 0.08, 0.34 + v * 0.06); // dry, straw-coloured grass: paler than the field
     }
-    const st = rocks(r, 22, () => [(r() - 0.5) * 2.4, (r() - 0.5) * 8], [0.05, 0.13], "#6f6656");
+    geom.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+    const dome = mesh(geom, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: false }));
+    dome.scale.set(1.9, 0.6, 6.2);
+    g.add(tag(dome, "solid"));
+    // Tall tufts all over the bank except in the ruts: they break its outline against the track behind.
+    const blade = new THREE.ConeGeometry(0.06, 0.5, 4);
+    for (let i = 0, placed = 0; i < 400 && placed < 130; i++) {
+        const z = (r() - 0.5) * 11;
+        const x = (r() - 0.5) * 2.6;
+        if (inRut(z, 0.4))
+            continue;
+        const top = 0.53 * Math.max(0, 1 - (x / 1.8) ** 2) * Math.max(0, 1 - (z / 6.2) ** 2) ** 0.5;
+        if (top <= 0.02)
+            continue;
+        const t = mesh(blade, std(["#b3ad6a", "#c9c07e", "#9aa65a", "#d6cc8c"][i % 4]), false);
+        t.position.set(x, top + 0.18, z);
+        t.rotation.set((r() - 0.5) * 0.6, 0, (r() - 0.5) * 0.6);
+        g.add(tag(t, "solid"));
+        placed++;
+    }
+    // A few stones loosened in the ruts.
+    const st = rocks(r, 10, () => [(r() - 0.5) * 2.2, RUT[r() < 0.5 ? 0 : 1] + (r() - 0.5) * 0.4], [0.04, 0.1], "#7a6f5c");
     st.traverse((o) => {
         if (o.isMesh)
-            o.position.y += 0.44 * Math.max(0, 1 - (o.position.x / 1.9) ** 2);
+            o.position.y += 0.5 * Math.max(0, 1 - (o.position.x / 1.9) ** 2);
         tag(o, "solid");
     });
     g.add(st);

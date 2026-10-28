@@ -636,10 +636,13 @@ export class World3D {
     pinScreen() {
         const w = this.canvas.clientWidth;
         const h = this.canvas.clientHeight;
+        this.camera.updateMatrixWorld();
         return this.pinPoints.map((p) => {
             const v = p.clone().project(this.camera);
+            const c = p.clone().applyMatrix4(this.camera.matrixWorldInverse); // camera space: in front when z < 0
             const dist = p.distanceTo(this.camera.position);
-            return { x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h, dist, visible: v.z < 1 && v.x > -1.05 && v.x < 1.05 && v.y > -1.05 && v.y < 1.05 };
+            const behind = c.z >= -0.05;
+            return { x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h, dist, visible: !behind && v.x > -1.05 && v.x < 1.05 && v.y > -1.05 && v.y < 1.05, behind, side: c.x < 0 ? -1 : 1 };
         });
     }
     resize() {

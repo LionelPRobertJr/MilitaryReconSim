@@ -24,12 +24,12 @@ export const RECON_DEFAULT_CONFIG = {
     probesEnabled: true,
     spotReportEnabled: true,
     spotReportIntervalSeconds: 20,
-    spotReportNextAfterSubmitSeconds: 2,
+    spotReportNextAfterSubmitSeconds: 6,
     tutorial: false,
     scoring: {
         objectiveReachedPerUgv: 200,
         timeBonusPerSecond: 1,
-        spotReportItemCorrect: 3,
+        spotReportItemCorrect: 2,
         immobilisedPenalty: 100,
         stopPenalty: 50,
         unnecessaryTakeoverPenalty: 30

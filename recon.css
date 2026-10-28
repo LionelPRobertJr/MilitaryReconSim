@@ -38,7 +38,8 @@ button.primary { background: var(--ink); color: var(--paper); border-color: var(
 button.primary:hover:not(:disabled) { background: #33443b; }
 :focus-visible { outline: 3px solid var(--choice); outline-offset: 2px; }
 
-#too-small { position: fixed; inset: 0; display: grid; place-items: center; padding: 32px; text-align: center; max-width: 34em; margin: auto; }
+#too-small { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 32px; text-align: center; background: #eef0e8; color: #26332c; font-size: 18px; }
+#too-small p { max-width: 34em; }
 #too-small[hidden], #app[hidden] { display: none; }
 
 #app { height: 100vh; display: grid; grid-template-rows: 48px 1fr; min-height: 720px; min-width: 1280px; }
@@ -281,6 +282,10 @@ button.primary:hover:not(:disabled) { background: #33443b; }
   background: #ffcb3d; color: #2b2410; border: 2px solid #3a2d08; font: 700 14px/1 var(--mono); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
 }
 .cab .wp-pin:hover, .cab .wp-pin:focus-visible { background: #fff2b8; border-width: 3px; }
+/* Keyboard focus: a white ring outside a dark one, readable on sky, grass and the gold pin itself. */
+.cab .wp-pin:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; box-shadow: 0 0 0 7px #1d2a22, 0 2px 6px rgba(0, 0, 0, 0.45); animation: none; }
+/* A pin held at the edge of the view (its real place is off to the side or behind the camera). */
+.cab .wp-pin.wp-edge { border-style: dashed; }
 .cab.can-take-over .wp-pin { animation: pin-glow 1.4s ease-in-out infinite; }
 @keyframes pin-glow { 50% { background: #ffe68a; box-shadow: 0 0 0 4px rgba(255, 210, 80, 0.45), 0 2px 6px rgba(0, 0, 0, 0.45); } }
 .cab .take-hint { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); z-index: 2; padding: 3px 10px; border-radius: 3px; background: rgba(20, 20, 16, 0.72); color: #ffe08a; font: 600 clamp(10px, 1.5cqw, 13px)/1.2 var(--mono); white-space: nowrap; pointer-events: none; }
@@ -393,3 +398,7 @@ button.primary:hover:not(:disabled) { background: #33443b; }
 .t-point { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: start; margin: 10px 0; }
 .t-num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #26332c; color: #f4f2ea; font: 600 13px/1 var(--sans, "IBM Plex Sans", system-ui, sans-serif); margin-top: 1px; }
 .t-key { background: #f1ead4; border-left: 4px solid #b0893a; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-top: 14px; }
+.overlay .sheet:focus { outline: none; }
+
+/* Questionnaire pages: the submit row stays visible at the bottom of a long page (agent testing, Oct 28, 2026). */
+.overlay .sheet > form > .buttons:last-child { position: sticky; bottom: -20px; z-index: 2; margin-bottom: -20px; padding: 12px 0 16px; background: var(--panel); }

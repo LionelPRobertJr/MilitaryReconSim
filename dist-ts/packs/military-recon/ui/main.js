@@ -7,11 +7,11 @@ import { completionHref, deviceInfo, readIds } from "../../../shell/participant/
 import { PARTICIPANT_LOG_SCHEMA_VERSION, SessionLog, simEventsOf, browserClocks } from "../../../shell/participant/session-log.js";
 import { SessionStore } from "../../../shell/participant/store.js";
 import { Uploader } from "../../../shell/participant/upload.js";
-import { INSTRUCTION_SETS, RECON_STUDY_SEEDS } from "../sim/config.js";
+import { INSTRUCTION_SETS, RECON_DEFAULT_CONFIG, RECON_STUDY_SEEDS } from "../sim/config.js";
 import { RECON_PACK_VERSION } from "../sim/pack.js";
 import { replayAndVerify } from "../sim/replay.js";
 import { ReconSimulation } from "../sim/simulation.js";
-import { CONSENT_HTML, CRITICAL_REPORT_PAGE, DECLINE_HTML, DEMOGRAPHICS, EXPERIENCE, MANIPULATION_PAGE, MOBILE_HTML, NO_ID_HTML, CONFIDENCE_IS_PLACEHOLDER, TLX_PAGE, bonusFor, bonusRulesText, debriefHtml, scoreBreakdownText, probePages } from "../shell/content.js";
+import { CONSENT_HTML, CRITICAL_REPORT_PAGE, DECLINE_HTML, DEMOGRAPHICS, EXPERIENCE, MANIPULATION_PAGE, MOBILE_HTML, NO_ID_HTML, CONFIDENCE_IS_PLACEHOLDER, TLX_PAGE, bonusEarned, bonusFor, bonusRulesText, debriefHtml, scoreBreakdownText, probePages } from "../shell/content.js";
 import { loadDeployment } from "../shell/deployment.js";
 import { checkStudyConfig, computeHashes, loadStudyConfig } from "../shell/study-config.js";
 import { reconMetricsCsv, reconSessionSummary } from "../shell/summary.js";
@@ -252,6 +252,20 @@ class ParticipantFlow {
                 this.persist();
         }, 5000);
         window.addEventListener("pagehide", () => this.persist());
+        // Leaving mid-study (the Back button, closing the tab) asks first; a reload still resumes (agent testing,
+        // Oct 28, 2026: Back left the study without a word). Not in the researcher view or the co-author demo.
+        // The browser's Back button stays in the study: an extra history entry absorbs it (agent testing, Oct 28,
+        // 2026: Back left the study for a blank page). Not in the demo, whose end page goes back to the start page.
+        if (!DEMO) {
+            history.pushState({ reconStay: true }, "");
+            window.addEventListener("popstate", () => history.pushState({ reconStay: true }, ""));
+        }
+        window.addEventListener("beforeunload", (e) => {
+            if (RESEARCHER || DEMO || this.state.stageIndex < 1 || this.stage === "debrief" || this.state.stageIndex >= STAGES.length)
+                return;
+            e.preventDefault();
+            e.returnValue = "";
+        });
         const checkWindow = () => {
             const ok = DEMO || (window.innerWidth >= this.dep.minWindow.width && window.innerHeight >= this.dep.minWindow.height);
             $("too-small").hidden = ok;
@@ -283,6 +297,13 @@ class ParticipantFlow {
                 void this.queueUpload(stage);
             resumed = false;
         }
+    }
+    /** Whether the mission log shows the critical event (the bridge) detected. */
+    metCriticalEvent() {
+        const attempt = this.state.attempts.mission;
+        if (!attempt)
+            return false;
+        return simEventsOf(this.log.all(), "mission", attempt).some((e) => e.type === "event_detected" && e.classId === "critical_novel");
     }
     missionHasStarted() {
         const attempt = this.state.attempts.mission;
@@ -323,6 +344,12 @@ class ParticipantFlow {
                 await this.pages.page(MANIPULATION_PAGE);
                 return;
             case "critical_report":
+                // Only for participants whose UGV #1 actually met the bridge (agent testing, Oct 28, 2026: a participant who
+                // never reached Section B was asked to describe it). The skip is logged.
+                if (!this.metCriticalEvent()) {
+                    this.log.record({ type: "critical_report_skipped", reason: "bridge_not_reached" });
+                    return;
+                }
                 await this.pages.page(CRITICAL_REPORT_PAGE);
                 return;
             case "debrief":
@@ -484,6 +511,11 @@ class ParticipantFlow {
         await this.pages.info("The mission is over", `<p class="t-text">${done ? "Both vehicles reached the objective." : "The mission time is up."} Next come a few questions about the mission. Your score and bonus are shown at the end.</p>`, [{ label: "Continue", choice: "go", primary: true }]);
         $("app").hidden = true;
     }
+    penaltyCounts(m) {
+        const s = { ...RECON_DEFAULT_CONFIG.scoring, ...(this.studyConfig.overrides.scoring ?? {}) };
+        const n = (k) => (typeof m[k] === "number" ? m[k] : 0);
+        return { stops: n("stops"), immobilisations: n("immobilisations"), unnecessaryReroutes: n("unnecessaryReroutes"), each: { stop: s.stopPenalty, stuck: s.immobilisedPenalty, takeover: s.unnecessaryTakeoverPenalty } };
+    }
     async debrief() {
         const mission = this.missionSummary();
         const score = mission ? mission.score : 0;
@@ -491,7 +523,7 @@ class ParticipantFlow {
             const m = mission ?? {};
             const pct = (v) => (typeof v === "number" ? `${Math.round(v * 100)}%` : "–");
             const html = `<p class="t-text">That is the end of the demo (condition <b>${this.state.assignment?.condition ?? ""}</b>, route seed ${this.state.assignment?.seed ?? ""}).</p>
-        <p class="t-text">Mission score <b>${score}</b>${m.scoreBreakdown ? ` (${esc(scoreBreakdownText(m.scoreBreakdown))})` : ""}.</p>
+        <p class="t-text">Mission score <b>${score}</b>${m.scoreBreakdown ? ` (${esc(scoreBreakdownText(m.scoreBreakdown, this.penaltyCounts(m)))})` : ""}.</p>
         <ul><li>Obstacles from training handled correctly: ${pct(m.trainedDecisionAccuracy)}</li><li>New obstacles (held back from training) handled correctly: ${pct(m.heldBackDecisionAccuracy)}</li><li>Times a vehicle got stuck: ${m.immobilisations ?? "–"}; take-overs it did not need: ${m.unnecessaryReroutes ?? "–"}</li></ul>
         <p class="t-text">Nothing was sent anywhere. To try another condition, go back to the demo's start page.</p>`;
             await this.pages.info("Demo complete", html, history.length > 1 ? [{ label: "Back to the start page", choice: "back", primary: true }] : []);
@@ -513,7 +545,7 @@ class ParticipantFlow {
                 ...(ok ? [] : [{ label: "Try again", choice: "retry" }]),
                 ...(href ? [{ label: `Return to ${this.dep.platform.platformName}`, choice: "return", primary: true }] : [])
             ];
-            const shown = this.pages.info("Thank you", debriefHtml({ score, bonus: `${this.dep.payment.currency}${amount.toFixed(2)}`, code, platform: this.dep.platform.platformName, breakdown: mission?.scoreBreakdown ? scoreBreakdownText(mission.scoreBreakdown) : undefined }) + status + research + (href ? "" : `<p class="t-text">You can now close this window.</p>`), buttons);
+            const shown = this.pages.info("Thank you", debriefHtml({ score, bonus: `${this.dep.payment.currency}${amount.toFixed(2)}`, earned: `${this.dep.payment.currency}${bonusEarned(score, this.dep.payment).toFixed(2)}`, floor: this.dep.payment.bonusFloor ? `${this.dep.payment.currency}${this.dep.payment.bonusFloor.toFixed(2)}` : undefined, code, platform: this.dep.platform.platformName, breakdown: mission?.scoreBreakdown ? scoreBreakdownText(mission.scoreBreakdown, this.penaltyCounts(mission)) : undefined }) + status + research + (href ? "" : `<p class="t-text">You can now close this window.</p>`), buttons);
             for (const b of sheet.querySelectorAll("[data-dl]")) {
                 b.onclick = () => {
                     const { files } = this.files();
@@ -548,7 +580,32 @@ function DEMO_HTML(condition, start) {
     <p class="t-text">Condition: <b>${names[condition]}</b>. You will go through ${from[start] ?? from.full}.</p>
     <p class="t-text">For the best experience use a laptop or desktop with the browser window maximised (at least 1280 × 720).</p>`;
 }
+/**
+ * While any page or dialog is open over the console, the console behind it is inert (no focus, no clicks) and
+ * keyboard focus moves into the dialog (agent testing, Oct 28, 2026: Tab went through the Spot Report behind the
+ * "Tutorial complete" dialog, and Enter there still worked).
+ */
+function watchOverlays() {
+    const overlays = [...document.querySelectorAll(".overlay")];
+    const app = document.getElementById("app");
+    const update = () => {
+        const open = overlays.find((o) => !o.hidden) ?? null;
+        if (app)
+            app.inert = !!open;
+        if (open && !open.contains(document.activeElement)) {
+            const sheetEl = open.querySelector(".sheet") ?? open;
+            if (!sheetEl.hasAttribute("tabindex"))
+                sheetEl.setAttribute("tabindex", "-1");
+            sheetEl.focus({ preventScroll: true });
+        }
+    };
+    const mo = new MutationObserver(update);
+    for (const o of overlays)
+        mo.observe(o, { attributes: true, attributeFilter: ["hidden"] });
+    update();
+}
 async function main() {
+    watchOverlays();
     for (const el of document.querySelectorAll("[data-researcher]"))
         el.hidden = !RESEARCHER;
     const dep = await loadDeployment();

@@ -95,9 +95,16 @@ export function wayRound(route, ev, side, fromS) {
     return { path: lead.length ? [...lead, ...around.slice(1)] : around, backUp };
 }
 const TUTORIAL_SECTION_LENGTH = 160;
-/** Arc lengths (from section start) of the event slots in a section of this length. */
-export function slotPositions(eventCount, sectionLength) {
-    return SLOT_FRACTIONS[eventCount].map((f) => Math.round(f * sectionLength));
+/**
+ * The two routes' slots are staggered (research team decision, Oct 28, 2026: with identical slots both vehicles met
+ * their obstacles at the same moment, so every alert came in pairs). UGV1's come a little earlier and UGV2's a
+ * little later: 0.07 of a section apart, about 15 s of driving, before operator actions shift them further.
+ */
+export const SLOT_STAGGER = { UGV1: -0.035, UGV2: 0.035 };
+/** Arc lengths (from section start) of the event slots in a section of this length (robotId: staggered, main mission). */
+export function slotPositions(eventCount, sectionLength, robotId) {
+    const shift = robotId ? SLOT_STAGGER[robotId] : 0;
+    return SLOT_FRACTIONS[eventCount].map((f) => Math.round((f + shift) * sectionLength));
 }
 function shuffle(rng, items) {
     const a = [...items];
@@ -209,7 +216,7 @@ export function buildRouteNetwork(rng, tutorial, mainSectionLength) {
         sections.forEach((section, si) => {
             const base = si * sectionLength;
             const placement = placements.find((p) => p.robotId === robotId && p.section === section);
-            const slots = slotPositions(placement.kinds.length, sectionLength);
+            const slots = slotPositions(placement.kinds.length, sectionLength, tutorial ? undefined : robotId);
             const plainOffsets = PLAIN_SCENE_FRACTIONS.map((f) => Math.round(f * sectionLength));
             plainOffsets.forEach((off, wi) => addNode(base + off, "scene", section, null, plainScene(section, wi + si)));
             placement.kinds.forEach((kindId, k) => {

@@ -13,7 +13,7 @@
 </head>
 <body>
   <div id="too-small" hidden>
-    <p>This study needs a desktop or laptop browser window at least 1280 × 720 pixels. Please enlarge the window or switch to a computer to continue.</p>
+    <p>This study needs a desktop or laptop browser window at least 1280 × 720 pixels. Please enlarge the window or switch to a computer to continue. The mission clock does not run while this message is shown.</p>
   </div>
 
   <div id="app" hidden>
@@ -37,12 +37,12 @@
           <li><i class="lamp on s-proc"></i>Something ahead: judging it, still driving</li>
           <li><i class="lamp on s-help"></i>Stopped: cannot get past, waiting for you (−50)</li>
           <li><i class="lamp on s-op"></i>Following your waypoints</li>
-          <li><i class="lamp on s-hold"></i>Stopped by you, stuck (−100), or waiting at a section line</li>
+          <li><i class="lamp on s-hold"></i>Stuck (−100), stopped by you (no cost), or waiting at a section line</li>
         </ul>
         <dl class="qr-actions">
           <dt><span class="key stop"></span>Stop</dt><dd>halts the vehicle where it is</dd>
           <dt><span class="key go"></span>Continue</dt><dd>lets it drive on by itself</dd>
-          <dt><span class="key wp">1</span>Waypoint</dt><dd>click one in the view to take over and send it round</dd>
+          <dt><span class="key wp">1</span>Waypoint</dt><dd>click one in the view to take over and send it round (−30 if it could have got past by itself)</dd>
         </dl>
       </aside>
       <section id="spot" aria-label="Spot Report">
@@ -74,7 +74,7 @@
         <div>
           <h2>What you see</h2>
           <p><b>Two vehicle panels</b>, side by side. Each shows the vehicle's status light, a short message, and its forward camera: the view through its windscreen as it drives.</p>
-          <p><b>Spot Report</b> (bottom right): count the vehicles and people in each image and submit. As soon as you submit, a new image appears; an image you leave is replaced after 20 seconds. There are as many as you have time for, and each correct count earns points.</p>
+          <p><b>Spot Report</b> (bottom right): count the vehicles and people in each image and submit. A few seconds after you submit, a new image appears; an image you leave is replaced after 20 seconds. There are as many as you have time for, and each correct count earns points.</p>
           <h2>Status lights</h2>
           <ul class="legend">
             <li><i class="lamp s-auto"></i>Green: driving its route</li>
@@ -97,7 +97,7 @@
           <ul class="points">
             <li><b>+200</b> per vehicle that reaches the objective</li>
             <li><b>+1</b> per second left, if both arrive before 24:00</li>
-            <li><b>+3</b> per correct Spot Report count</li>
+            <li><b>+2</b> per correct Spot Report count</li>
             <li><b>−50</b> each time a vehicle stops by itself and waits for you (pressing Stop costs nothing)</li>
             <li><b>−30</b> each time you take over at something the vehicle could have got through by itself</li>
             <li><b>−100</b> if a vehicle gets stuck</li>

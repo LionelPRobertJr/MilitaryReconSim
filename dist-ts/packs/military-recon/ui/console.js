@@ -153,6 +153,10 @@ export class ConsoleSession {
             pt.bank = Math.max(0, pt.bank - dt);
             window.__skipRender3d = pt.bank > 1e-9;
         }
+        // The "window too small" notice covers the console; mission time does not run behind it (agent testing,
+        // Oct 28, 2026: at 1024 x 700 the mission ran on with the notice hidden behind the camera views).
+        if (document.getElementById("too-small")?.hidden === false)
+            dt = 0;
         if (!this.sim.pausedReason())
             this.sim.advanceRealTime(dt);
         this.frameSim = this.sim.pausedReason() || this.sim.isEnded() ? 0 : dt;
@@ -214,7 +218,7 @@ export class ConsoleSession {
                     ? { status: "Driving through", message: "Driving on through it. The light turns green once it is past.", placard: "AUTONOMY ACTIVE" }
                     : { status: "Obstacle ahead", message: "Something on the track ahead. It slows down to judge it and keeps driving; it stops by itself only if it cannot get past.", placard: "AUTONOMY ACTIVE" };
             case "help_requested": {
-                const since = u.helpSince !== null ? ` Waiting for ${Math.floor(w.simTime - u.helpSince)} s.` : "";
+                const since = u.helpSince !== null ? ` It has been waiting ${Math.floor(w.simTime - u.helpSince)}\u00a0s.` : "";
                 const recovered = this.sim.logger.all().some((e) => e.type === "recovered" && e.robotId === u.id && e.eventId === u.atEventId);
                 return {
                     status: "Stopped",
@@ -224,8 +228,18 @@ export class ConsoleSession {
                     placard: "WAITING FOR OPERATOR"
                 };
             }
-            case "operator_control":
-                return { status: "Following waypoints", message: "Following your waypoints around the obstacle, more slowly. It carries on by itself afterwards.", placard: "OPERATOR ROUTE" };
+            case "operator_control": {
+                // Research team decision, Oct 28, 2026: an unnecessary take-over says so, with its cost, like the stop and
+                // stuck penalties do.
+                const take = this.sim.logger
+                    .all()
+                    .filter((e) => e.type === "operator_action" && e.robotId === u.id && e.accepted && e.action === "reroute")
+                    .at(-1);
+                const message = take?.unnecessary
+                    ? `Not needed: it could have got past this by itself (−${this.sim.config.scoring.unnecessaryTakeoverPenalty} points). Following your waypoints round it.`
+                    : "Following your waypoints around the obstacle, more slowly. It carries on by itself afterwards.";
+                return { status: "Following waypoints", message, placard: "OPERATOR ROUTE" };
+            }
             case "holding":
                 if (u.holdReason === "operator")
                     return {

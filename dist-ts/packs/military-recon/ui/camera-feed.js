@@ -197,8 +197,22 @@ export class CameraFeed {
         }
         if (!bypassId)
             return;
-        const screen = this.world3d.pinScreen();
+        const raw = this.world3d.pinScreen();
         const buttons = [...this.pins.querySelectorAll("[data-waypoint]")];
+        // A pin outside the view (close to an obstacle, or once the vehicle is stuck at it, the pins beside it can be
+        // off to the side or behind the camera) is held at the edge of the view on its side, so all three stay visible
+        // and clickable (agent testing, Oct 28, 2026: pins slid out of view and stayed in the Tab order unseen).
+        const canvas = this.world3d.renderer.domElement;
+        const W = canvas.clientWidth;
+        const H = canvas.clientHeight;
+        const M = 20;
+        const screen = raw.map((p) => {
+            if (p.visible)
+                return { ...p, edge: false };
+            const x = p.behind ? (p.side < 0 ? M : W - M) : Math.min(W - M, Math.max(M, p.x));
+            const y = p.behind ? H * 0.62 : Math.min(H - M, Math.max(M, p.y));
+            return { ...p, x, y, dist: Math.max(p.dist, 1), visible: W > 0 && H > 0, edge: true };
+        });
         // Far off, the three pins are almost on top of each other: spread them sideways (in their order across the
         // view) so each number stays readable and clickable; close up they sit on their stems.
         const placed = screen.map((p, i) => ({ i, p, size: p ? Math.max(22, Math.min(34, 520 / p.dist)) : 0, x: p?.x ?? 0 }));
@@ -207,10 +221,15 @@ export class CameraFeed {
             const a = shown[k - 1];
             const b = shown[k];
             const gap = (a.size + b.size) / 2 + 4;
-            if (Math.abs(a.p.y - b.p.y) < gap && b.x - a.x < gap)
-                b.x = a.x + gap;
+            if (Math.abs(a.p.y - b.p.y) < gap && b.x - a.x < gap) {
+                // Pins held at the same side edge are stacked; others are spread sideways.
+                if (a.p.edge && b.p.edge && Math.abs(a.x - b.x) < 1)
+                    b.p = { ...b.p, y: a.p.y - gap };
+                else
+                    b.x = a.x + gap;
+            }
         }
-        if (shown.length > 1) {
+        if (shown.length > 1 && !shown.some((q) => q.p.edge)) {
             // Re-centre the group on where the pins really are.
             const shift = (shown.reduce((t, q) => t + q.p.x, 0) - shown.reduce((t, q) => t + q.x, 0)) / shown.length;
             for (const q of shown)
@@ -223,9 +242,15 @@ export class CameraFeed {
                 return;
             }
             b.hidden = false;
+            b.classList.toggle("wp-edge", !!q.p.edge);
             b.style.width = b.style.height = `${q.size.toFixed(0)}px`;
             b.style.fontSize = `${(q.size * 0.5).toFixed(0)}px`;
-            b.style.transform = `translate(${(q.x - q.size / 2).toFixed(1)}px, ${(q.p.y - q.size / 2).toFixed(1)}px)`;
+            // Far off, the pins are lifted clear above the obstacle so they do not hide it (agent testing, Oct 28,
+            // 2026); close up they sit on their stems.
+            const lift = q.p.edge ? 0 : q.size * 1.1 * Math.min(1, Math.max(0, (q.p.dist - 15) / 25));
+            const x = Math.min(W - q.size / 2, Math.max(q.size / 2, q.x));
+            const y = Math.min(H - q.size / 2, Math.max(q.size / 2, q.p.y - lift));
+            b.style.transform = `translate(${(x - q.size / 2).toFixed(1)}px, ${(y - q.size / 2).toFixed(1)}px)`;
         });
     }
 }

@@ -6,7 +6,7 @@ import { PARTICIPANT_LOG_SCHEMA_VERSION, simEventsOf } from "../../../shell/part
 import { adaptivePerformance } from "../sim/adaptive.js";
 import { RECON_PACK_VERSION } from "../sim/pack.js";
 import { measuresSummary } from "../training/events.js";
-import { TEAM_ADAPT_ITEMS, bonusFor } from "./content.js";
+import { TEAM_ADAPT_ITEMS, bonusEarned, bonusFor } from "./content.js";
 const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 export function reconSessionSummary({ events, missionSummary, deployment }) {
     const open = events.find((e) => e.type === "session_open");
@@ -77,7 +77,7 @@ export function reconSessionSummary({ events, missionSummary, deployment }) {
         manipulationCheck: manip ? { ruleRecall: manip.items.rule_recall, novelEvent: manip.items.novel_event } : null,
         criticalReport: crit ? crit.items.critical_report : null,
         focus: focusSummary(events),
-        bonus: score === null ? null : { score, amount: bonusFor(score, deployment.payment), currency: deployment.payment.currency },
+        bonus: score === null ? null : { score, amount: bonusFor(score, deployment.payment), earned: bonusEarned(score, deployment.payment), floorApplied: bonusFor(score, deployment.payment) > bonusEarned(score, deployment.payment), currency: deployment.payment.currency },
         deployment
     };
 }

@@ -132,7 +132,7 @@ function principlesPage(set, defs) {
             `1. The UGVs handle these themselves. ${handles.map((k) => CASE_LOOK[k.id] ?? k.appearance).join(" ")}`,
             `2. These need you. ${needs.map((k) => CASE_LOOK[k.id] ?? k.appearance).join(" ")}`,
             "3. All of them are off-road. Every scene is on the dirt tracks the vehicles follow, and you see each one through the windscreen as the vehicle slowly drives closer.",
-            "So for anything you meet, ask two questions. Which of the six scenes does it look most like? And is it one of the three the UGVs handle, or one of the three that need you? Compare what you see with these pictures as the vehicle comes closer, and then follow the rule on the previous page."
+            "So for anything you meet, ask two questions. Which of the six scenes does it look most like? And is it one of the three the UGVs handle, or one of the three that need you? The next pages show each scene from two camera angles. In the mission, compare what you see with them as the vehicle comes closer, and then follow the rule on the previous page."
         ],
         examples: []
     };
@@ -140,9 +140,9 @@ function principlesPage(set, defs) {
 /** Short descriptions of the six trained cases for the C1-C3 page (purely visual; no capability terms). */
 const CASE_LOOK = {
     small_debris: "Small debris is stones and broken branches scattered across the track, mostly about the size of a fist.",
-    shallow_water: "Shallow water is a thin, clear sheet across the track, with the brown earth and the wheel ruts showing through it.",
+    shallow_water: "Shallow water is a thin, pale sheet lying flat across the track, with a few pebbles showing in it.",
     light_brush: "Light brush is thin, pale green grass and low plants growing over the edges of the track.",
-    rubble_pile: "A rubble pile is a heap of broken grey rock across the whole track, higher than the vehicle.",
+    rubble_pile: "A rubble pile is a lumpy brown heap of broken rock and earth across the whole track, about as high as the vehicle.",
     fallen_tree: "A fallen tree is a thick, dark trunk lying across the full width of the track, its leaves at one end.",
     abandoned_vehicle: "An abandoned vehicle is a stalled green truck standing across the track, its door left open."
 };

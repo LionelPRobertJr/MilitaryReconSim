@@ -19,7 +19,7 @@ export const CAPABILITY_BOUNDARY = {
     /** Completes "a UGV judges the terrain by ...". */
     senses: "its shape and height, measured by its LiDAR sensors, plus the object types it was trained to recognise",
     /** The last entry completes "it cannot see ..."; the others complete "it cannot judge ...". */
-    cannotJudge: ["what is beneath a surface", "what is behind something", "through obscurants such as smoke or dust"],
+    cannotJudge: ["what is beneath a surface", "what is behind something", "through obscurants such as dust or fog"],
     rule: "When the scene depends on something it cannot sense, it needs you.",
     /**
      * C4's "How a UGV decides" page (Oct 11, 2026: research team asked for training that makes sure C4 participants
@@ -57,12 +57,12 @@ export const EVENT_KINDS = [
         geometry: "passable",
         structuralFailure: false,
         hiddenFactor: null,
-        appearance: "A thin sheet of clear water covers the track after rain. Through it you can see the brown earth, a few pebbles and both wheel ruts running straight on underneath.",
+        appearance: "A thin sheet of pale, still water covers the track after rain. It is shallow and flat, with a few pebbles showing in it and the track running straight on beyond it.",
         plural: "shallow water",
         withArticle: "shallow water",
         object: "water",
         heightFact: "it senses the firm track bed under the clear water, only a few centimetres down",
-        cardText: "A thin sheet of clear water across the track."
+        cardText: "A thin sheet of pale, still water across the track."
     },
     {
         id: "light_brush",
@@ -87,7 +87,7 @@ export const EVENT_KINDS = [
         geometry: "blocked",
         structuralFailure: false,
         hiddenFactor: null,
-        appearance: "A heap of broken rock and rubble covers the whole track. It rises higher than the vehicle, with large grey blocks and a few loose stones scattered around its base.",
+        appearance: "A heap of broken rock and earth covers the whole track. It rises about as high as the vehicle, brown and lumpy, with loose stones scattered around its base.",
         plural: "rubble piles",
         withArticle: "a rubble pile",
         object: "rubble pile",
@@ -201,8 +201,8 @@ export const EVENT_KINDS = [
         withArticle: "a low mound",
         object: "mound",
         heightFact: "it rises less than its ground clearance, with gentle slopes",
-        appearance: "A low mound of earth runs across the track, bare on top and grassy at its ends.",
-        cardText: "A low mound of earth running across the track."
+        appearance: "A low grassy bank runs across the track, with the two wheel ruts worn bare over it.",
+        cardText: "A low grassy bank running across the track, the wheel ruts worn bare over it."
     },
     {
         id: "fallen_sapling",
@@ -271,8 +271,8 @@ export const CARD_KINDS = [
         withArticle: "a fallen tree",
         object: "trunk",
         heightFact: "it is taller than its ground clearance and spans the full width of the track",
-        appearance: "A fallen pine lies across the track at the edge of a wood. Its trunk is thick and straight, its bark is grey, and its needles still cover the far end.",
-        cardText: "A fallen pine lying across the track in a wood."
+        appearance: "Another fallen tree lies across the full width of the track. Its trunk is thick and straight, its bark is pale grey and weathered, and dark leaves still cover the far end.",
+        cardText: "A fallen tree with pale grey bark lying across the track."
     },
     {
         id: "fallen_pole",
