@@ -1,3 +1,4 @@
+import { FAULT_FIXES, FAULT_READINGS, faultType } from "../sim/faults.js";
 import { createCameraFeed } from "./camera-feed.js";
 import { drawSpotImage } from "./spotImage.js";
 // The Military Recon operator console, as redesigned by the research team
@@ -91,11 +92,13 @@ export class ConsoleSession {
           <i class="lamp big" data-role="lamp" role="img"></i>
           <span class="ugv-status" data-role="status"></span>
           <div class="controls">
+            <button type="button" class="ctl diag" data-role="diagnose" hidden><i aria-hidden="true"></i>Diagnose</button>
             <button type="button" class="ctl stop" data-ctl="hold"><i aria-hidden="true"></i>Stop</button>
             <button type="button" class="ctl go" data-ctl="resume"><i aria-hidden="true"></i>Continue</button>
           </div>
         </header>
-        <div class="cab-wrap"><div class="cab" data-role="cam"></div><p class="message" data-role="msg" aria-live="polite"></p></div>`;
+        <div class="cab-wrap"><div class="cab" data-role="cam"></div><p class="message" data-role="msg" aria-live="polite"></p>
+          <section class="fault-panel" data-role="fault-panel" role="dialog" aria-label="${NAME[id]} fault report" hidden></section></div>`;
         }
     }
     wire() {
@@ -118,6 +121,18 @@ export class ConsoleSession {
                 });
             }
         }
+        // Optional faults (off in Study 2): Diagnose opens the vehicle's fault report; its buttons send the fix.
+        for (const id of ROBOTS) {
+            const panel = $(`panel-${id}`);
+            this.on(panel.querySelector("[data-role=diagnose]"), "click", () => this.toggleFaultPanel(id));
+            this.on(panel.querySelector("[data-role=fault-panel]"), "click", (e) => {
+                const b = e.target.closest("[data-fix]");
+                if (b)
+                    this.applyFix(id, b.dataset.fix);
+                else if (e.target.closest("[data-close]"))
+                    this.closeFaultPanel(id);
+            });
+        }
         const form = $("spot-form");
         this.on(form, "submit", (e) => {
             e.preventDefault();
@@ -130,6 +145,43 @@ export class ConsoleSession {
             this.sim.enqueueCommand({ kind: "spot_report_submit", imageId: img.id, vehicles, people });
             form.reset();
         });
+    }
+    faultPanelOpen = {};
+    toggleFaultPanel(id) {
+        if (this.faultPanelOpen[id])
+            return this.closeFaultPanel(id);
+        if (this.sim.pausedReason() || this.sim.isEnded())
+            return;
+        const f = this.sim.snapshot().ugvs[id].fault;
+        if (!f)
+            return;
+        this.faultPanelOpen[id] = f.id;
+        this.sim.enqueueCommand({ kind: "fault_action", robotId: id, action: "inspect" });
+        const t = faultType(f.typeId);
+        const readings = FAULT_READINGS.map((r) => `<tr><th scope="row">${r.label}</th><td>${r.key === t.reading ? t.abnormal : r.normal}</td></tr>`).join("");
+        const fixes = FAULT_FIXES.map((x) => `<button type="button" data-fix="${x.id}">${x.label}<span>${x.seconds} s</span></button>`).join("");
+        const panel = $(`panel-${id}`).querySelector("[data-role=fault-panel]");
+        panel.innerHTML = `<header><h3>Fault report: ${NAME[id]}</h3><button type="button" class="fp-close" data-close aria-label="Close the fault report">×</button></header>
+      <p class="fp-lead">One reading is outside its normal range. Pick the fix that matches it, or Reboot.</p>
+      <table class="fp-readings">${readings}</table>
+      <div class="fp-fixes">${fixes}<button type="button" data-fix="reboot" class="fp-reboot">Reboot (always works)<span>${this.sim.config.faults.rebootSeconds} s</span></button></div>
+      <p class="fp-note">A wrong fix takes its time, does not help, and costs ${this.sim.config.faults.wrongFixPenalty} points.</p>`;
+        panel.hidden = false;
+        panel.querySelector("[data-fix]")?.focus({ preventScroll: true });
+    }
+    closeFaultPanel(id) {
+        this.faultPanelOpen[id] = null;
+        const panel = $(`panel-${id}`).querySelector("[data-role=fault-panel]");
+        panel.hidden = true;
+        panel.innerHTML = "";
+    }
+    applyFix(id, action) {
+        if (this.sim.pausedReason() || this.sim.isEnded())
+            return;
+        if (this.sim.faultRejectReason(id, action) !== null)
+            return;
+        this.sim.enqueueCommand({ kind: "fault_action", robotId: id, action });
+        this.closeFaultPanel(id);
     }
     /** A waypoint was clicked: send the vehicle around the obstacle in view. */
     takeOver(id) {
@@ -210,6 +262,19 @@ export class ConsoleSession {
     describe(u, w) {
         const other = ROBOTS.find((r) => r !== u.id);
         const stopPenalty = this.sim.config.scoring.stopPenalty;
+        if (u.state === "holding" && u.holdReason === "fault" && u.fault) {
+            const r = u.fault.repair;
+            if (r) {
+                const what = r.action === "reboot" ? "Rebooting" : FAULT_FIXES.find((x) => x.id === r.action).label;
+                return { status: "Repairing", message: `${what}: ${Math.max(0, Math.ceil(r.remaining))}\u00a0s left.`, placard: "REPAIR IN PROGRESS" };
+            }
+            const tried = this.sim.logger.all().some((e) => e.type === "fault_repair_end" && e.robotId === u.id && e.faultId === u.fault.id && !e.cleared);
+            return {
+                status: "Fault",
+                message: tried ? "That fix did not clear the fault. Click Diagnose and try again, or Reboot." : "It has reported a fault and stopped. Click Diagnose to read its sensors and fix it.",
+                placard: "VEHICLE FAULT"
+            };
+        }
         switch (u.state) {
             case "auto_navigation":
                 return { status: "OK", message: "Driving its route.", placard: "AUTONOMY ACTIVE" };
@@ -275,9 +340,21 @@ export class ConsoleSession {
             btn.disabled = !can[btn.dataset.ctl];
         this.setHtml(`hint-${u.id}`, el.querySelector("[data-role=hint]"), target ? "Take over: click any numbered waypoint" : "");
         this.setHtml(`status-${u.id}`, el.querySelector("[data-role=status]"), d.status);
-        this.setHtml(`msg-${u.id}`, el.querySelector("[data-role=msg]"), d.message);
+        const faulted = u.state === "holding" && u.holdReason === "fault";
+        const lampClass = faulted ? "s-fault" : LAMP_CLASS[u.state];
+        // The status light is repeated, large, at the top of the view beside the message (pilot feedback, Nov 2, 2026:
+        // "it took me a long time to find the status light"; the one in the header stays).
+        this.setHtml(`msg-${u.id}`, el.querySelector("[data-role=msg]"), `<span class="msg-status"><i class="lamp big on ${lampClass}" aria-hidden="true"></i><b>${d.status}</b></span><span class="msg-text">${d.message}</span>`);
         const lamp = el.querySelector("[data-role=lamp]");
-        const cls = `lamp big on ${LAMP_CLASS[u.state]}`;
+        const cls = `lamp big on ${lampClass}`;
+        // Optional faults: the Diagnose button, the report (closed once the fault clears) and a camera that has lost its signal.
+        const diag = el.querySelector("[data-role=diagnose]");
+        diag.hidden = !faulted;
+        diag.disabled = !faulted || !!u.fault?.repair || !!this.sim.pausedReason();
+        if (this.faultPanelOpen[u.id] && (!u.fault || u.fault.id !== this.faultPanelOpen[u.id] || u.fault.repair))
+            this.closeFaultPanel(u.id);
+        el.querySelector("[data-role=cam]").classList.toggle("no-signal", !!u.fault && u.fault.typeId === "camera_loss" && !(u.fault.repair && u.fault.repair.correct && u.fault.repair.remaining < 1));
+        el.dataset.fault = faulted ? "1" : "";
         if (lamp.className !== cls)
             lamp.className = cls;
         lamp.setAttribute("aria-label", `${NAME[u.id]} status: ${d.status}`);
@@ -319,7 +396,12 @@ export class ConsoleSession {
         const resolved = (robot) => w.eventStatus[ev(robot).id] === "resolved";
         const stop = this.sim.config.scoring.stopPenalty;
         let text;
-        if (u1.holdReason === "objective" || u2.holdReason === "objective")
+        const faulty = u1.holdReason === "fault" ? u1 : u2.holdReason === "fault" ? u2 : null;
+        if (faulty && faulty.fault)
+            text = faulty.fault.repair
+                ? `The repair is under way. When it finishes, ${NAME[faulty.id]} drives on by itself.`
+                : `${NAME[faulty.id]} has reported a fault (purple light) and stopped. Click Diagnose on its panel: one reading is outside its normal range. Pick the fix that matches it, or Reboot, which always works but takes longest. In the mission, a wrong fix wastes time and costs ${this.sim.config.faults.wrongFixPenalty} points.`;
+        else if (u1.holdReason === "objective" || u2.holdReason === "objective")
             text = "The practice route ends at the objective. The tutorial finishes by itself when both vehicles arrive.";
         else if (u1.state === "holding" && u1.holdReason === "operator")
             text = "You stopped UGV #1 (grey light): it waits where it is. You could take over now by clicking a waypoint. Here, press Continue to let it drive on and watch what it does.";

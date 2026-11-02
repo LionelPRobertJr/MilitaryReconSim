@@ -33,5 +33,12 @@ export const RECON_DEFAULT_CONFIG = {
         immobilisedPenalty: 100,
         stopPenalty: 50,
         unnecessaryTakeoverPenalty: 30
+    },
+    faults: {
+        enabled: false,
+        count: 3,
+        types: "motor_overheat,nav_drift,camera_loss",
+        wrongFixPenalty: 10,
+        rebootSeconds: 25
     }
 };

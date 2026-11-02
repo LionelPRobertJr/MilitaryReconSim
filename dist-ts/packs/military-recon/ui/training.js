@@ -22,10 +22,13 @@ const verdictHtml = (t) => {
     const i = t.indexOf(". ");
     return i < 0 ? esc(t) : `<b>${esc(t.slice(0, i + 1))}</b> ${esc(t.slice(i + 2))}`;
 };
-function imagePair(images) {
+/** label: the case's name, shown on the example pages (pilot feedback, Nov 2, 2026: the pictures were described but
+ *  not named, while the rest of the training and the mission refer to them by name). Not on practice or cards. */
+function imagePair(images, label) {
     const geometry = sceneKindById(images[0].sceneId).geometry;
     const caption = (v) => (v === "camera" ? "Camera view" : v === "height_map" ? "Robot's view (height map)" : "Second camera angle");
-    return `<div class="t-pair">${images.map((im) => `<figure>${picture(im, geometry)}<figcaption>${caption(im.view)}</figcaption></figure>`).join("")}</div>`;
+    const name = label ? `<b class="t-name">${esc(label)}</b> · ` : "";
+    return `<div class="t-pair">${images.map((im) => `<figure>${picture(im, geometry)}<figcaption>${name}${caption(im.view)}</figcaption></figure>`).join("")}</div>`;
 }
 export class TrainingPlayer {
     overlay;
@@ -62,7 +65,7 @@ export class TrainingPlayer {
     }
     pageHtml(page, index, total, nav) {
         const examples = page.examples
-            .map((e) => `<div class="t-example">${imagePair(e.images)}<p class="t-verdict t-${e.verdict}">${verdictHtml(e.text)}</p></div>`)
+            .map((e) => `<div class="t-example">${imagePair(e.images, sceneKindById(e.kindId).label)}<p class="t-verdict t-${e.verdict}">${verdictHtml(e.text)}</p></div>`)
             .join("");
         return `<p class="t-progress">Training, page ${index + 1} of ${total}</p>
       <h1>${esc(page.title)}</h1>

@@ -20,6 +20,13 @@ export class ReconSimulation extends Engine {
     rerouteTarget(robotId) {
         return this.session.rerouteTarget(robotId);
     }
+    /** Optional faults: the scheduled faults, and whether an action on a UGV's fault is possible now (null = yes). */
+    get faults() {
+        return this.session.faults;
+    }
+    faultRejectReason(robotId, action) {
+        return this.session.faultRejectReason(robotId, action);
+    }
     /** UI-originated measures (brief section 10's camera_view / robot_select); not commands, they change nothing. */
     logCameraView(robotId) {
         if (this.isEnded())

@@ -38,6 +38,7 @@
           <li><i class="lamp on s-help"></i>Stopped: cannot get past, waiting for you (−50)</li>
           <li><i class="lamp on s-op"></i>Following your waypoints</li>
           <li><i class="lamp on s-hold"></i>Stuck (−100), stopped by you (no cost), or waiting at a section line</li>
+          <li data-faults hidden><i class="lamp on s-fault"></i>Fault: click Diagnose, then the matching fix or Reboot</li>
         </ul>
         <dl class="qr-actions">
           <dt><span class="key stop"></span>Stop</dt><dd>halts the vehicle where it is</dd>
@@ -91,6 +92,7 @@
             <li><i class="lamp s-help"></i><span><b>Red</b> stopped at something it cannot get past, waiting for you</span></li>
             <li><i class="lamp s-op"></i><span><b>Blue</b> following the waypoints you chose</span></li>
             <li><i class="lamp s-hold"></i><span><b>Grey</b> stopped by you, stuck, waiting at a section line, or at the objective</span></li>
+            <li data-faults hidden><i class="lamp s-fault"></i><span><b>Purple</b> a fault: it has stopped until you repair it</span></li>
           </ul>
           <h3>Timing</h3>
           <p>The route has three sections. At each section line the vehicles wait for each other and the mission pauses for a short check-in. The mission ends at 24:00, even if a vehicle has not reached the objective.</p>
@@ -108,6 +110,7 @@
           <dl class="brief-controls">
             <dt><span class="key stop"></span>Stop</dt><dd>Halts the vehicle where it is while you look. No points lost, only time.</dd>
             <dt><span class="key go"></span>Continue</dt><dd>Lets a vehicle you stopped drive on by itself.</dd>
+            <dt data-faults hidden><span class="key diag"></span>Diagnose</dt><dd data-faults hidden>Sometimes a vehicle reports a fault and stops (purple light). Click Diagnose: one sensor reading is outside its normal range. Pick the fix that matches it, or Reboot, which always works but takes longest. A wrong fix wastes time and costs 10 points.</dd>
             <dt><span class="key wp">1</span>Take over</dt><dd>Click a numbered waypoint in the vehicle's view. It follows them round the obstacle, more slowly, then carries on by itself. <b class="brief-mark">Any waypoint works; they all lead round the obstacle.</b> If the vehicle could have got through by itself, taking over costs points.</dd>
           </dl>
         </section>

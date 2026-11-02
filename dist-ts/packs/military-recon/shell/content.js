@@ -145,6 +145,32 @@ export const CRITICAL_REPORT_PAGE = {
     submitLabel: "Finish",
     items: [{ kind: "text", id: "critical_report", text: "Describe what happened at the bridge, and why you acted as you did.", rows: 6 }]
 };
+/**
+ * Feedback on the study itself, for pilot testers (friends and colleagues; user request, Oct 28, 2026). Shown just
+ * before the debrief, only when the deployment sets `pilotFeedback`. Everything is optional except the three ratings.
+ */
+const FIVE = (labels) => ({ points: 5, anchors: [labels[0], labels[4]], labels });
+export const PILOT_FEEDBACK_PAGE = {
+    id: "pilot_feedback",
+    title: "Your feedback on the study",
+    kicker: "Pilot test",
+    intro: [
+        "Thank you for testing this study before it runs. These questions are about the study itself: what worked, what was unclear and what went wrong. There are no right answers, and anything you noticed helps, however small."
+    ],
+    eventType: "pilot_feedback_response",
+    submitLabel: "Send feedback and continue",
+    items: [
+        { kind: "likert", id: "instructions_clear", text: "How clear were the instructions and the training?", ...FIVE(["Very unclear", "Somewhat unclear", "Neither", "Somewhat clear", "Very clear"]) },
+        { kind: "likert", id: "controls_easy", text: "How easy was it to understand and control the vehicles?", ...FIVE(["Very hard", "Somewhat hard", "Neither", "Somewhat easy", "Very easy"]) },
+        { kind: "choice", id: "length", text: "How did the length of the study feel?", options: [{ value: "too_short", label: "Too short" }, { value: "about_right", label: "About right" }, { value: "a_bit_long", label: "A bit long" }, { value: "much_too_long", label: "Much too long" }] },
+        { kind: "choice", id: "something_broke", text: "Did anything not work? For example a frozen or blank view, a button that did nothing, or an error message.", options: [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }, { value: "not_sure", label: "Not sure" }], required: false },
+        { kind: "text", id: "what_broke", text: "If something did not work: what happened, and roughly where (which page, or what mission time)?", rows: 3, required: false },
+        { kind: "text", id: "confusing", text: "Was anything confusing or hard to follow? Which page or moment?", rows: 3, required: false },
+        { kind: "text", id: "obstacles", text: "Were there obstacles you could not recognise, or that looked wrong or odd?", rows: 3, required: false },
+        { kind: "text", id: "suggestions", text: "Anything else: suggestions, things you liked or disliked.", rows: 4, required: false },
+        { kind: "text", id: "setup", text: "Which computer and browser did you use (e.g. MacBook, Chrome)?", rows: 1, required: false }
+    ]
+};
 const money = (p, x) => `${p.currency}${x.toFixed(2)}`;
 /** Bonus rules, identical words in every condition (brief section 8), shown before the mission. */
 export function bonusRulesText(p) {

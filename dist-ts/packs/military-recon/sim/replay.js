@@ -13,6 +13,9 @@ export function inputsFromEvents(events) {
                     cmd: { kind: "ugv_action", robotId: e.robotId, action: e.action, ...(e.action === "reroute" && e.targetEdge ? { bypassId: e.targetEdge } : {}) }
                 });
                 break;
+            case "fault_action":
+                out.push({ t: e.t, kind: "command", cmd: { kind: "fault_action", robotId: e.robotId, action: e.action } });
+                break;
             case "spot_report":
                 out.push({ t: e.t, kind: "command", cmd: { kind: "spot_report_submit", imageId: e.imageId, vehicles: e.answer.vehicles, people: e.answer.people } });
                 break;

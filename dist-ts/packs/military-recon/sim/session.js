@@ -4,6 +4,7 @@ import { isHeldBack, needsOperator } from "./event-definitions.js";
 import { cumulative, pointAt } from "./geometry.js";
 import { HIDDEN_STUCK_AT, ROBOT_IDS, wayRound } from "./route.js";
 import { buildSpotImage, spotTruth } from "./spotReport.js";
+import { faultType, fixSeconds, scheduleFaults } from "./faults.js";
 // The Military Recon scenario pack's per-session logic (Study 2 brief
 // sections 4-6, 8, 10). The engine owns the clock, command queue, pauses and
 // logging; this file owns route following, the UGV state machine, events,
@@ -71,12 +72,17 @@ export class ReconSession {
     spotIndex = 0;
     nextSpotAt;
     spotRng;
+    /** Optional faults (empty unless config.faults.enabled). */
+    faults;
+    faultStarted = new Set();
     constructor(ctx, network) {
         this.ctx = ctx;
         this.network = network;
         // The tutorial draws its images from its own stream, so the mission never repeats a tutorial image.
         this.spotRng = ctx.stream(ctx.config.tutorial ? "spot-report-tutorial" : "spot-report");
         this.nextSpotAt = Math.min(15, this.config.spotReportIntervalSeconds);
+        // Faults draw from their own stream, and only when enabled, so a mission without faults is unchanged.
+        this.faults = this.config.faults?.enabled ? scheduleFaults(this.config.faults, network, this.config.detectionDistance, ctx.stream("faults"), this.config.tutorial) : [];
         this.startup = [() => this.logNetwork(), "drt.schedule", "sart.schedule"];
         this.tick = [
             "drt.trigger",
@@ -112,6 +118,8 @@ export class ReconSession {
     applyCommand(cmd) {
         if (cmd.kind === "ugv_action")
             this.handleAction(cmd.robotId, cmd.action, cmd.bypassId ?? null);
+        else if (cmd.kind === "fault_action")
+            this.handleFaultAction(cmd.robotId, cmd.action);
         else
             this.handleSpotReport(cmd.imageId, cmd.vehicles, cmd.people);
     }
@@ -121,7 +129,8 @@ export class ReconSession {
             t: 0,
             type: "route_network",
             events: n.events.map((e) => ({ id: e.id, robotId: e.robotId, section: e.section, kindId: e.kindId, classId: e.classId, behaviour: e.behaviour, sE: e.sE })),
-            sectionLength: n.sectionLength
+            sectionLength: n.sectionLength,
+            ...(this.faults.length ? { faults: this.faults.map((f) => ({ ...f })) } : {})
         });
     }
     // --- helpers ------------------------------------------------------------
@@ -183,6 +192,10 @@ export class ReconSession {
     advance(u, dt) {
         switch (u.state) {
             case "holding":
+                if (u.holdReason === "fault") {
+                    this.advanceRepair(u, dt);
+                    return;
+                }
                 if (u.holdReason === "immobilised" && u.immobilisedRemaining !== null) {
                     u.immobilisedRemaining -= dt;
                     if (u.immobilisedRemaining <= 1e-9)
@@ -228,6 +241,12 @@ export class ReconSession {
                 reach = "end";
             }
         }
+        // An optional fault starts here if one is due on this stretch of plain track (never while an obstacle is in view).
+        if (!ev && u.state === "auto_navigation") {
+            const f = this.faults.find((x) => x.robotId === u.id && x.section === u.section && !this.faultStarted.has(x.id) && x.s < limit);
+            if (f)
+                limit = Math.max(u.s, f.s);
+        }
         const v = ev ? this.config.assessingSpeed : this.config.autonomousSpeed;
         const target = Math.min(limit, u.s + v * dt);
         this.passNodes(u, target);
@@ -236,6 +255,11 @@ export class ReconSession {
         if (u.s < limit - 1e-9)
             return;
         u.s = limit;
+        const due = !ev && u.state === "auto_navigation" ? this.faults.find((x) => x.robotId === u.id && x.section === u.section && !this.faultStarted.has(x.id) && x.s <= u.s + 1e-6) : undefined;
+        if (due) {
+            this.startFault(u, due);
+            return;
+        }
         if (reach === "arrive")
             this.arriveAtObstacle(u, ev);
         else if (reach === "pass")
@@ -357,6 +381,8 @@ export class ReconSession {
     rejectReason(u, action, bypassId) {
         if (this.world.phase !== "running" || this.world.missionComplete)
             return "session_not_running";
+        if (u.state === "holding" && u.holdReason === "fault")
+            return "fault";
         const byOperator = u.state === "holding" && u.holdReason === "operator";
         if (u.state === "holding" && !byOperator)
             return u.holdReason === "immobilised" ? "immobilised" : u.holdReason === "checkpoint" ? "waiting_at_section_line" : "at_objective";
@@ -437,6 +463,60 @@ export class ReconSession {
         // On the way round the camera shows the live view of the path, not the obstacle still.
         this.setCamera(u, "bypass_track", null);
         this.setState(u, "operator_control");
+    }
+    // --- optional faults (sim/faults.ts; off in Study 2) ------------------------------
+    startFault(u, f) {
+        this.faultStarted.add(f.id);
+        u.fault = { id: f.id, typeId: f.typeId, since: this.now, repair: null };
+        this.record({ t: this.now, type: "fault_onset", robotId: u.id, faultId: f.id, typeId: f.typeId, section: f.section, s: u.s });
+        this.setState(u, "holding", "fault");
+    }
+    /** Whether a fault action can be taken on this UGV now (null = yes). */
+    faultRejectReason(robotId, action) {
+        const u = this.world.ugvs[robotId];
+        if (!u || this.world.phase !== "running" || this.world.missionComplete)
+            return "session_not_running";
+        if (!u.fault)
+            return "no_fault";
+        if (action !== "inspect" && u.fault.repair)
+            return "repair_under_way";
+        return null;
+    }
+    handleFaultAction(robotId, action) {
+        const u = this.world.ugvs[robotId];
+        if (!u)
+            return;
+        const reason = this.faultRejectReason(robotId, action);
+        const f = u.fault;
+        if (reason !== null || !f) {
+            this.record({ t: this.now, type: "fault_action", robotId, faultId: f?.id ?? null, action, accepted: false, correct: null, rejectReason: reason });
+            return;
+        }
+        if (action === "inspect") {
+            this.record({ t: this.now, type: "fault_action", robotId, faultId: f.id, action, accepted: true, correct: null, rejectReason: null });
+            return;
+        }
+        const correct = action === "reboot" || action === faultType(f.typeId).fix;
+        this.record({ t: this.now, type: "fault_action", robotId, faultId: f.id, action, accepted: true, correct, rejectReason: null });
+        f.repair = { action, remaining: action === "reboot" ? this.config.faults.rebootSeconds : fixSeconds(action), correct };
+        if (!correct)
+            this.addScore(-this.config.faults.wrongFixPenalty, "fault_wrong_fix", "penalties");
+    }
+    advanceRepair(u, dt) {
+        const f = u.fault;
+        if (!f || !f.repair)
+            return;
+        f.repair.remaining -= dt;
+        if (f.repair.remaining > 1e-9)
+            return;
+        const r = f.repair;
+        f.repair = null;
+        this.record({ t: this.now, type: "fault_repair_end", robotId: u.id, faultId: f.id, action: r.action, cleared: r.correct });
+        if (!r.correct)
+            return; // a wrong fix did nothing: still faulted, waiting for the operator
+        this.record({ t: this.now, type: "fault_resolved", robotId: u.id, faultId: f.id, typeId: f.typeId, how: r.action === "reboot" ? "reboot" : "fix", seconds: this.now - f.since });
+        delete u.fault;
+        this.setState(u, "auto_navigation");
     }
     // --- sections, objective, mission end ------------------------------------------
     reachSectionEnd(u) {
@@ -645,12 +725,40 @@ export class ReconSession {
             spotReportsAttempted: sr.attempted,
             spotReportAccuracy: sr.itemsTotal > 0 ? sr.itemsCorrect / sr.itemsTotal : null,
             spotReportMeanRtSeconds: mean(spotAnswers.map((e) => (e.type === "spot_report" ? e.rtSeconds : 0))),
+            ...(this.faults.length ? this.faultSummary(log) : {}),
             criticalEvent,
             decisions,
             sections,
             ...core.drt,
             ...core.questionnaires,
             ...core.sart
+        };
+    }
+    /** Optional faults' measures (only when faults are on, so Study 2's summary is unchanged). */
+    faultSummary(log) {
+        const onsets = log.filter((e) => e.type === "fault_onset");
+        const acts = log.filter((e) => e.type === "fault_action" && e.accepted);
+        const resolved = log.filter((e) => e.type === "fault_resolved");
+        const fixes = acts.filter((e) => e.type === "fault_action" && e.action !== "inspect");
+        const firstFix = (id) => fixes.find((e) => e.type === "fault_action" && e.faultId === id);
+        const firstInspect = (id) => acts.find((e) => e.type === "fault_action" && e.faultId === id && e.action === "inspect");
+        const onsetAt = (id) => onsets.find((e) => e.type === "fault_onset" && e.faultId === id).t;
+        const diag = onsets.map((o) => (o.type === "fault_onset" ? firstInspect(o.faultId) : undefined)).map((a, i) => (a ? a.t - onsets[i].t : null)).filter((x) => x !== null);
+        const firsts = onsets.map((o) => (o.type === "fault_onset" ? firstFix(o.faultId) : undefined)).filter((a) => a !== undefined);
+        return {
+            /** Faults that started during the mission. */
+            faultsOccurred: onsets.length,
+            faultsResolved: resolved.length,
+            /** Fault start to driving on again (resolved faults). */
+            faultMeanRepairSeconds: mean(resolved.map((e) => (e.type === "fault_resolved" ? e.seconds : 0))),
+            /** Fault start to opening its report. */
+            faultMeanDiagnoseSeconds: mean(diag),
+            /** Fault start to the first fix or Reboot. */
+            faultMeanFirstActionSeconds: mean(firsts.map((a) => a.t - onsetAt(a.faultId))),
+            /** Share of faults whose first action was the right fix (Reboot does not count as a diagnosis). */
+            faultCorrectFirstFix: firsts.length ? firsts.filter((a) => a.type === "fault_action" && a.correct && a.action !== "reboot").length / firsts.length : null,
+            faultWrongFixes: fixes.filter((e) => e.type === "fault_action" && e.correct === false).length,
+            faultReboots: fixes.filter((e) => e.type === "fault_action" && e.action === "reboot").length
         };
     }
     /** Each UGV's Section B time: from Section B start to reaching its Section B line. */

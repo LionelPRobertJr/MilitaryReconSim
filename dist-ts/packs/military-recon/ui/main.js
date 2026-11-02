@@ -11,7 +11,7 @@ import { INSTRUCTION_SETS, RECON_DEFAULT_CONFIG, RECON_STUDY_SEEDS } from "../si
 import { RECON_PACK_VERSION } from "../sim/pack.js";
 import { replayAndVerify } from "../sim/replay.js";
 import { ReconSimulation } from "../sim/simulation.js";
-import { CONSENT_HTML, CRITICAL_REPORT_PAGE, DECLINE_HTML, DEMOGRAPHICS, EXPERIENCE, MANIPULATION_PAGE, MOBILE_HTML, NO_ID_HTML, CONFIDENCE_IS_PLACEHOLDER, TLX_PAGE, bonusEarned, bonusFor, bonusRulesText, debriefHtml, scoreBreakdownText, probePages } from "../shell/content.js";
+import { CONSENT_HTML, CRITICAL_REPORT_PAGE, PILOT_FEEDBACK_PAGE, DECLINE_HTML, DEMOGRAPHICS, EXPERIENCE, MANIPULATION_PAGE, MOBILE_HTML, NO_ID_HTML, CONFIDENCE_IS_PLACEHOLDER, TLX_PAGE, bonusEarned, bonusFor, bonusRulesText, debriefHtml, scoreBreakdownText, probePages } from "../shell/content.js";
 import { loadDeployment } from "../shell/deployment.js";
 import { checkStudyConfig, computeHashes, loadStudyConfig } from "../shell/study-config.js";
 import { reconMetricsCsv, reconSessionSummary } from "../shell/summary.js";
@@ -99,11 +99,22 @@ class ParticipantFlow {
         window.clearTimeout(this.persistTimer);
         this.persistTimer = window.setTimeout(() => this.persist(), 400);
     }
+    /**
+     * Optional faults (off in Study 2): on when the study config's overrides turn them on, or for testing in the
+     * researcher view with ?faults=1.
+     */
+    faultsOn() {
+        return !!this.studyConfig.overrides.faults?.enabled || (RESEARCHER && params.get("faults") === "1");
+    }
+    faultOverrides() {
+        return RESEARCHER && params.get("faults") === "1" ? { faults: { ...RECON_DEFAULT_CONFIG.faults, ...(this.studyConfig.overrides.faults ?? {}), enabled: true } } : {};
+    }
     missionOptions() {
         const a = this.state.assignment;
         return {
             config: {
                 ...this.studyConfig.overrides,
+                ...this.faultOverrides(),
                 seed: a.seed,
                 instructionSet: a.condition,
                 tutorial: false,
@@ -419,12 +430,16 @@ class ParticipantFlow {
     async overview() {
         this.pages.hide();
         $("bonus-rules").textContent = bonusRulesText(this.dep.payment);
+        for (const el of document.querySelectorAll("[data-faults]"))
+            el.hidden = !this.faultsOn();
         $("start-overlay").hidden = false;
         await new Promise((r) => $("btn-tutorial").addEventListener("click", () => r(), { once: true }));
         $("start-overlay").hidden = true;
     }
     runConsole(sim, tutorial) {
         this.pages.hide();
+        for (const el of document.querySelectorAll("[data-faults]"))
+            el.hidden = !sim.config.faults?.enabled;
         $("app").hidden = false;
         speedBadge();
         return new Promise((resolve) => {
@@ -458,7 +473,7 @@ class ParticipantFlow {
     }
     async tutorial() {
         const a = this.state.assignment;
-        const sim = this.newSim({ config: { ...this.studyConfig.overrides, seed: a.seed, instructionSet: a.condition, tutorial: true, probesEnabled: false }, participantId: this.ids.participantId });
+        const sim = this.newSim({ config: { ...this.studyConfig.overrides, ...this.faultOverrides(), seed: a.seed, instructionSet: a.condition, tutorial: true, probesEnabled: false }, participantId: this.ids.participantId });
         const done = this.runConsole(sim, true);
         const finished = await done;
         const tookOver = finished.logger.all().some((e) => e.type === "operator_action" && e.accepted && e.action === "reroute");
@@ -466,6 +481,7 @@ class ParticipantFlow {
             `You have seen how the vehicles and their status lights behave${tookOver ? ", and taken over a vehicle by clicking its waypoints" : ""}. ` +
                 (tookOver ? "" : "In the mission, you take over by clicking one of the waypoints beside an obstacle in a vehicle's camera view. ") +
                 "Remember that Stop halts a vehicle while you look, and Continue lets it drive on. " +
+                (sim.config.faults?.enabled ? "If a vehicle reports a fault (purple light), click Diagnose and pick the fix that matches the reading outside its normal range, or Reboot. " : "") +
                 `Your practice score was ${finished.snapshot().score} (${scoreBreakdownText(finished.snapshot().scoreBreakdown)}); it does not count towards your bonus. ` +
                 "Next comes a short training module about when to take over, then the mission itself, which works the same way on longer routes.";
         $("tutorial-done-overlay").hidden = false;
@@ -517,6 +533,9 @@ class ParticipantFlow {
         return { stops: n("stops"), immobilisations: n("immobilisations"), unnecessaryReroutes: n("unnecessaryReroutes"), each: { stop: s.stopPenalty, stuck: s.immobilisedPenalty, takeover: s.unnecessaryTakeoverPenalty } };
     }
     async debrief() {
+        // Pilot testers' feedback on the study, logged with the session (deployment flag; not in the demo).
+        if (this.dep.pilotFeedback && !DEMO && !this.log.all().some((e) => e.type === "pilot_feedback_response"))
+            await this.pages.page(PILOT_FEEDBACK_PAGE);
         const mission = this.missionSummary();
         const score = mission ? mission.score : 0;
         if (DEMO) {
