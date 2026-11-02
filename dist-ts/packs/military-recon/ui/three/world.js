@@ -668,7 +668,10 @@ export class World3D {
         const edge = this.ribbon(path, 0.12, 0.1, edgeMat, 6);
         edge.renderOrder = 6;
         this.wp.add(edge);
-        const pins = wayRoundPins(this.route, ev, side);
+        // One take-over marker, at the middle of the way round (pilot feedback, Nov 2, 2026: "why not just have one
+        // button?"; the three numbered pins all did the same).
+        const all = wayRoundPins(this.route, ev, side);
+        const pins = [all[Math.floor(all.length / 2)]];
         const stem = new THREE.CylinderGeometry(0.05, 0.05, 2.2, 6);
         const stemMat = new THREE.MeshStandardMaterial({ color: "#2b2410" });
         for (const pin of pins) {

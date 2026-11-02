@@ -370,17 +370,17 @@ export class CameraFeed2D {
         const near = path.slice(0, -1);
         const line = near.map((p, i) => `${i ? "L" : "M"}${f1(p.x)} ${f1(p.y)}`).join(" ");
         const far = `M${f1(path.at(-2).x)} ${f1(path.at(-2).y)} L${f1(path.at(-1).x)} ${f1(path.at(-1).y)}`;
-        const pin = (p, i) => {
+        const pin = (p) => {
             const s = k(p.y);
             const h = 15 * s;
-            return `<g class="wp-pt" data-waypoint="${i + 1}" role="button" tabindex="0" aria-label="Waypoint ${i + 1}: take over and send ${this.label} around">
+            return `<g class="wp-pt" data-waypoint="2" role="button" tabindex="0" aria-label="Take over: send ${this.label} round the obstacle">
         <ellipse cx="${f1(p.x)}" cy="${f1(p.y)}" rx="${f1(7 * s)}" ry="${f1(2.2 * s)}" class="wp-shadow"/>
         <path d="M${f1(p.x)} ${f1(p.y)} V ${f1(p.y - h)}" class="wp-stem" stroke-width="${f1(1.4 * s + 0.4)}"/>
         <circle class="hit" cx="${f1(p.x)}" cy="${f1(p.y - h)}" r="${f1(Math.max(11, 15 * s))}"/>
-        <g transform="translate(${f1(p.x)} ${f1(p.y - h)}) scale(${s.toFixed(3)})"><circle class="wp-head" r="8.5"/><text y="3.5">${i + 1}</text></g>
+        <g transform="translate(${f1(p.x)} ${f1(p.y - h)}) scale(${s.toFixed(3)})"><rect class="wp-head" x="-24" y="-8.5" width="48" height="17" rx="8.5"/><text y="3.2" font-size="8.5">Take over</text></g>
       </g>`;
         };
-        this.wp.innerHTML = `<polygon class="wp-ribbon" points="${[...left.slice(0, -1), ...right.slice(0, -1).reverse()].join(" ")}"/><path class="wp-path" d="${line}"/><path class="wp-path far" d="${far}"/>${pins.map(pin).join("")}`;
+        this.wp.innerHTML = `<polygon class="wp-ribbon" points="${[...left.slice(0, -1), ...right.slice(0, -1).reverse()].join(" ")}"/><path class="wp-path" d="${line}"/><path class="wp-path far" d="${far}"/>${pin(pins[Math.floor(pins.length / 2)])}`;
         for (const g of this.wp.querySelectorAll("[data-waypoint]")) {
             g.addEventListener("keydown", (e) => {
                 if (e.key === "Enter" || e.key === " ") {

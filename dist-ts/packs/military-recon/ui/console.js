@@ -67,7 +67,46 @@ export class ConsoleSession {
         // their full height.
         $("quickref").hidden = this.tutorial;
         this.wire();
+        this.watchFocus();
         this.raf = requestAnimationFrame((t) => this.frame(t));
+    }
+    /**
+     * Leaving the window during the mission (pilot feedback, Nov 2, 2026): on return, a message says how long they were
+     * away and that the mission kept running. The mission does not pause (it would become a way to stop the clock);
+     * focus changes are logged anyway (FocusTracker), and the message's showing is noted.
+     */
+    watchFocus() {
+        let awaySince = null;
+        let hideTimer = 0;
+        const leave = () => {
+            if (awaySince === null && !this.sim.isEnded() && !this.sim.pausedReason())
+                awaySince = performance.now();
+        };
+        const back = () => {
+            if (awaySince === null || document.hidden)
+                return;
+            const secs = (performance.now() - awaySince) / 1000;
+            awaySince = null;
+            if (secs < 1.5 || this.sim.isEnded())
+                return;
+            const el = $("focus-warning");
+            el.textContent = `You left this window for about ${Math.round(secs)} seconds, and the ${this.tutorial ? "practice" : "mission"} kept running. Please keep this window in front until the ${this.tutorial ? "practice" : "mission"} ends.`;
+            el.hidden = false;
+            window.clearTimeout(hideTimer);
+            hideTimer = window.setTimeout(() => (el.hidden = true), 8000);
+            this.onNote("left_window_warning", { seconds: Math.round(secs * 10) / 10, simTime: this.sim.snapshot().simTime });
+        };
+        const onVis = () => (document.hidden ? leave() : back());
+        window.addEventListener("blur", leave);
+        window.addEventListener("focus", back);
+        document.addEventListener("visibilitychange", onVis);
+        this.cleanups.push(() => {
+            window.removeEventListener("blur", leave);
+            window.removeEventListener("focus", back);
+            document.removeEventListener("visibilitychange", onVis);
+            window.clearTimeout(hideTimer);
+            $("focus-warning").hidden = true;
+        });
     }
     dispose() {
         cancelAnimationFrame(this.raf);
@@ -288,8 +327,8 @@ export class ConsoleSession {
                 return {
                     status: "Stopped",
                     message: recovered
-                        ? `Recovered, but it still cannot get past. Click a waypoint to send it around.${since}`
-                        : `Stopped: it cannot get past this (−${stopPenalty} points). Click a waypoint to send it around.${since}`,
+                        ? `Recovered, but it still cannot get past. Click Take over in its view to send it round.${since}`
+                        : `Stopped: it cannot get past this (−${stopPenalty} points). Click Take over in its view to send it round.${since}`,
                     placard: "WAITING FOR OPERATOR"
                 };
             }
@@ -301,18 +340,18 @@ export class ConsoleSession {
                     .filter((e) => e.type === "operator_action" && e.robotId === u.id && e.accepted && e.action === "reroute")
                     .at(-1);
                 const message = take?.unnecessary
-                    ? `Not needed: it could have got past this by itself (−${this.sim.config.scoring.unnecessaryTakeoverPenalty} points). Following your waypoints round it.`
-                    : "Following your waypoints around the obstacle, more slowly. It carries on by itself afterwards.";
-                return { status: "Following waypoints", message, placard: "OPERATOR ROUTE" };
+                    ? `Not needed: it could have got past this by itself (−${this.sim.config.scoring.unnecessaryTakeoverPenalty} points). Going round it on the marked path.`
+                    : "Going round the obstacle on the marked path, more slowly. It carries on by itself afterwards.";
+                return { status: "Taken over", message, placard: "OPERATOR ROUTE" };
             }
             case "holding":
                 if (u.holdReason === "operator")
                     return {
                         status: "Stopped by you",
                         message: u.manual
-                            ? "Stopped on your waypoints. Press Continue to carry on round the obstacle."
+                            ? "Stopped on the way round. Press Continue to carry on round the obstacle."
                             : u.atEventId
-                                ? "Stopped where it is. Click a waypoint to take over, or press Continue to let it drive on."
+                                ? "Stopped where it is. Click Take over in its view, or press Continue to let it drive on."
                                 : "Stopped where it is. Press Continue to let it drive on.",
                         placard: "OPERATOR HOLD"
                     };
@@ -338,7 +377,7 @@ export class ConsoleSession {
         const can = this.sim.isEnded() || this.sim.pausedReason() ? { hold: false, resume: false } : this.sim.availableActions(u.id);
         for (const btn of el.querySelectorAll("[data-ctl]"))
             btn.disabled = !can[btn.dataset.ctl];
-        this.setHtml(`hint-${u.id}`, el.querySelector("[data-role=hint]"), target ? "Take over: click any numbered waypoint" : "");
+        this.setHtml(`hint-${u.id}`, el.querySelector("[data-role=hint]"), target ? "To take over, click the marker beside the obstacle" : "");
         this.setHtml(`status-${u.id}`, el.querySelector("[data-role=status]"), d.status);
         const faulted = u.state === "holding" && u.holdReason === "fault";
         const lampClass = faulted ? "s-fault" : LAMP_CLASS[u.state];
@@ -404,18 +443,18 @@ export class ConsoleSession {
         else if (u1.holdReason === "objective" || u2.holdReason === "objective")
             text = "The practice route ends at the objective. The tutorial finishes by itself when both vehicles arrive.";
         else if (u1.state === "holding" && u1.holdReason === "operator")
-            text = "You stopped UGV #1 (grey light): it waits where it is. You could take over now by clicking a waypoint. Here, press Continue to let it drive on and watch what it does.";
+            text = "You stopped UGV #1 (grey light): it waits where it is. You could take over now with the Take over marker. Here, press Continue to let it drive on and watch what it does.";
         else if (u2.state === "holding" && u2.holdReason === "operator")
-            text = "You stopped UGV #2: it waits where it is. Now take over: click one of the numbered waypoints beside the tree in its view. Any waypoint works; they all lead round the obstacle.";
+            text = "You stopped UGV #2: it waits where it is. Now take over: click the Take over marker beside the tree in its view.";
         else if (u2.state === "help_requested")
-            text = `UGV #2 could not get past and has stopped by itself: its light is red and it is waiting for you. A stop like this costs ${stop} points in the mission. Click one of the waypoints beside the tree in UGV #2's view to send it around.`;
+            text = `UGV #2 could not get past and has stopped by itself: its light is red and it is waiting for you. A stop like this costs ${stop} points in the mission. Click the Take over marker beside the tree in UGV #2's view to send it round.`;
         else if (u2.state === "operator_control")
-            text = "UGV #2 is following your waypoints (blue light) round the tree, more slowly. It carries on by itself afterwards.";
+            text = "UGV #2 is going round the tree on the marked path (blue light), more slowly. It carries on by itself afterwards.";
         else if (resolved("UGV1") && resolved("UGV2"))
             text = "Both vehicles are past their obstacles and drive on to the objective. Meanwhile, keep counting in the Spot Report (bottom right).";
         else if (u1.state === "processing" && u2.state === "processing" && !u1.reachedObstacle)
             text =
-                "Both lights are yellow: each vehicle has spotted something ahead. It slows down and judges it but keeps driving: it will only stop by itself if it cannot get past. You decide what to do. Stop halts a vehicle where it is while you look; Continue lets it drive on; clicking a numbered waypoint takes over and sends it round. Any waypoint works; they all lead round the obstacle. Try Stop on UGV #1 and then Continue. Take over UGV #2 with a waypoint.";
+                "Both lights are yellow: each vehicle has spotted something ahead. It slows down and judges it but keeps driving: it will only stop by itself if it cannot get past. You decide what to do. Stop halts a vehicle where it is while you look; Continue lets it drive on; clicking the Take over marker in its view sends it round. Try Stop on UGV #1 and then Continue. Take over UGV #2 with its marker.";
         else if (u1.state === "processing" && u1.reachedObstacle)
             text = "UGV #1 judged it could get through: it is driving on through the debris, and its light turns green once it is past.";
         else if (resolved("UGV1"))

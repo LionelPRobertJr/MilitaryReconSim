@@ -32,7 +32,7 @@ export const RECON_DEFAULT_CONFIG = {
         spotReportItemCorrect: 2,
         immobilisedPenalty: 100,
         stopPenalty: 50,
-        unnecessaryTakeoverPenalty: 30
+        unnecessaryTakeoverPenalty: 50
     },
     faults: {
         enabled: false,

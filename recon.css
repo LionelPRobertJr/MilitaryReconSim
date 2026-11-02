@@ -487,3 +487,21 @@ button.primary:hover:not(:disabled) { background: #33443b; }
 .cab-wrap .message .msg-text { text-align: left; min-width: 0; }
 .ugv[data-state="processing"] .cab-wrap .message .lamp, .ugv[data-state="help_requested"] .cab-wrap .message .lamp { animation: lamp-pulse 1.2s ease-in-out infinite; }
 .t-pair figcaption .t-name { color: var(--ink); font-size: 13.5px; font-weight: 600; }
+
+/* Briefing in three steps (pilot feedback, Nov 2, 2026): one card at a time, larger. */
+.sheet.brief { max-width: 860px; }
+.sheet.brief .brief-grid { grid-template-columns: minmax(0, 1fr); }
+.brief-card[hidden] { display: none !important; }
+.sheet.brief .brief-card { padding: 16px 20px; }
+.sheet.brief .brief-card p, .sheet.brief .brief-card li, .sheet.brief .brief-card dd, .sheet.brief .brief-card td { font-size: 14.5px !important; }
+.sheet.brief .brief-card h2 { font-size: 17px; }
+.sheet.brief .buttons button[hidden] { display: none; }
+.brief-progress { margin-left: auto; align-self: center; color: var(--ink-soft); font-size: 13px; }
+/* The single Take over marker (pilot feedback, Nov 2, 2026), still: no pulsing, so it does not look like something
+   that must be clicked. */
+.cab .wp-pin.wp-take { width: auto; border-radius: 999px; padding: 0 10px; white-space: nowrap; font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 600; letter-spacing: 0.01em; }
+.cab.can-take-over .wp-pin, .cab.can-take-over .wp .wp-head { animation: none; }
+.cab .wp text { font-weight: 600; }
+/* Left the window during the mission (pilot feedback, Nov 2, 2026). */
+#focus-warning { position: fixed; left: 50%; top: 58px; transform: translateX(-50%); z-index: 50; max-width: min(640px, 92vw); padding: 10px 16px; border-radius: 6px; background: #3a2d08; color: #fff3d1; border-left: 6px solid var(--choice); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35); font-size: 14.5px; line-height: 1.4; }
+#focus-warning[hidden] { display: none; }

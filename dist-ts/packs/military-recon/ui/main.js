@@ -433,7 +433,33 @@ class ParticipantFlow {
         for (const el of document.querySelectorAll("[data-faults]"))
             el.hidden = !this.faultsOn();
         $("start-overlay").hidden = false;
+        // The briefing in three short steps, one card at a time (pilot feedback, Nov 2, 2026: "too much text as-is for
+        // online subjects"); the warning box stays on every step.
+        const cards = [...document.querySelectorAll("#start-overlay [data-step]")];
+        let step = 1;
+        const show = () => {
+            for (const c of cards)
+                c.hidden = Number(c.dataset.step) !== step;
+            $("brief-back").hidden = step === 1;
+            $("brief-next").hidden = step === cards.length;
+            $("btn-tutorial").hidden = step !== cards.length;
+            $("brief-progress").textContent = `Step ${step} of ${cards.length}`;
+            $("start-overlay").querySelector(".sheet").scrollTop = 0;
+            (step === cards.length ? $("btn-tutorial") : $("brief-next")).focus({ preventScroll: true });
+            this.log.record({ type: "briefing_step", step });
+        };
+        const go = (d) => {
+            step = Math.min(cards.length, Math.max(1, step + d));
+            show();
+        };
+        const next = () => go(1);
+        const back = () => go(-1);
+        $("brief-next").addEventListener("click", next);
+        $("brief-back").addEventListener("click", back);
+        show();
         await new Promise((r) => $("btn-tutorial").addEventListener("click", () => r(), { once: true }));
+        $("brief-next").removeEventListener("click", next);
+        $("brief-back").removeEventListener("click", back);
         $("start-overlay").hidden = true;
     }
     runConsole(sim, tutorial) {
@@ -478,8 +504,8 @@ class ParticipantFlow {
         const finished = await done;
         const tookOver = finished.logger.all().some((e) => e.type === "operator_action" && e.accepted && e.action === "reroute");
         $("tutorial-done-text").textContent =
-            `You have seen how the vehicles and their status lights behave${tookOver ? ", and taken over a vehicle by clicking its waypoints" : ""}. ` +
-                (tookOver ? "" : "In the mission, you take over by clicking one of the waypoints beside an obstacle in a vehicle's camera view. ") +
+            `You have seen how the vehicles and their status lights behave${tookOver ? ", and taken over a vehicle with its Take over marker" : ""}. ` +
+                (tookOver ? "" : "In the mission, you take over by clicking the Take over marker beside an obstacle in a vehicle's camera view. ") +
                 "Remember that Stop halts a vehicle while you look, and Continue lets it drive on. " +
                 (sim.config.faults?.enabled ? "If a vehicle reports a fault (purple light), click Diagnose and pick the fix that matches the reading outside its normal range, or Reboot. " : "") +
                 `Your practice score was ${finished.snapshot().score} (${scoreBreakdownText(finished.snapshot().scoreBreakdown)}); it does not count towards your bonus. ` +

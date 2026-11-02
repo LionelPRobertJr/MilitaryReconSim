@@ -192,7 +192,7 @@ export class CameraFeed {
             this.wpBypass = bypassId;
             this.el.classList.toggle("can-take-over", !!bypassId);
             this.pins.innerHTML = bypassId
-                ? [1, 2, 3].map((i) => `<button type="button" class="wp-pin" data-waypoint="${i}" aria-label="Waypoint ${i}: take over and send ${this.label} around">${i}</button>`).join("")
+                ? `<button type="button" class="wp-pin wp-take" data-waypoint="2" aria-label="Take over: send ${this.label} round the obstacle">Take over</button>`
                 : "";
         }
         if (!bypassId)
@@ -215,7 +215,7 @@ export class CameraFeed {
         });
         // Far off, the three pins are almost on top of each other: spread them sideways (in their order across the
         // view) so each number stays readable and clickable; close up they sit on their stems.
-        const placed = screen.map((p, i) => ({ i, p, size: p ? Math.max(22, Math.min(34, 520 / p.dist)) : 0, x: p?.x ?? 0 }));
+        const placed = screen.map((p, i) => ({ i, p, size: p ? Math.max(24, Math.min(30, 520 / p.dist)) : 0, x: p?.x ?? 0 }));
         const shown = placed.filter((q) => q.p && q.p.visible).sort((a, b) => a.x - b.x);
         for (let k = 1; k < shown.length; k++) {
             const a = shown[k - 1];
@@ -243,14 +243,17 @@ export class CameraFeed {
             }
             b.hidden = false;
             b.classList.toggle("wp-edge", !!q.p.edge);
-            b.style.width = b.style.height = `${q.size.toFixed(0)}px`;
-            b.style.fontSize = `${(q.size * 0.5).toFixed(0)}px`;
+            b.style.height = `${q.size.toFixed(0)}px`;
+            b.style.fontSize = `${(q.size * 0.46).toFixed(0)}px`;
             // Far off, the pins are lifted clear above the obstacle so they do not hide it (agent testing, Oct 28,
             // 2026); close up they sit on their stems.
             const lift = q.p.edge ? 0 : q.size * 1.1 * Math.min(1, Math.max(0, (q.p.dist - 15) / 25));
             const x = Math.min(W - q.size / 2, Math.max(q.size / 2, q.x));
             const y = Math.min(H - q.size / 2, Math.max(q.size / 2, q.p.y - lift));
-            b.style.transform = `translate(${(x - q.size / 2).toFixed(1)}px, ${(y - q.size / 2).toFixed(1)}px)`;
+            // Centred on the pin head (the marker is a pill, wider than tall).
+            const half = (b.offsetWidth || q.size * 3.2) / 2;
+            const xc = Math.min(W - half, Math.max(half, x));
+            b.style.transform = `translate(${(xc - half).toFixed(1)}px, ${(y - q.size / 2).toFixed(1)}px)`;
         });
     }
 }
