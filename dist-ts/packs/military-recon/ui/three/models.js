@@ -154,7 +154,8 @@ function water(w, d, look, seed, y = 0.06) {
     g.add(tag(wet, "surface"));
     // Muddy water (Oct 11, 2026): matte, so at a grazing angle from 30-60 m it stays dark brown instead of mirroring the
     // pale sky like the clear water does; that difference is what lets it be told apart from afar.
-    const surface = new THREE.Mesh(geom, look.muddy ? new THREE.MeshLambertMaterial({ map: muddyWaterTexture(), transparent: true, depthWrite: false, alphaMap: crispEdge() }) : new THREE.MeshStandardMaterial({
+    // Nov 5, 2026: tinted a little darker, so it reads as deep water rather than a puddle.
+    const surface = new THREE.Mesh(geom, look.muddy ? new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(0.8, 0.76, 0.7, THREE.SRGBColorSpace), map: muddyWaterTexture(), transparent: true, depthWrite: false, alphaMap: crispEdge() }) : new THREE.MeshStandardMaterial({
         color: look.muddy ? "#ffffff" : look.color, map: look.muddy ? muddyWaterTexture() : null, roughness: look.muddy ? 0.22 : 0.03, metalness: 0, transparent: true, opacity: look.opacity, depthWrite: false,
         alphaMap: look.muddy ? crispEdge() : softEdge(), normalMap: normal, normalScale: new THREE.Vector2(look.muddy ? 0.12 : 0.3, look.muddy ? 0.12 : 0.3), envMapIntensity: look.muddy ? 0.45 : 2.6
     }));
@@ -804,6 +805,7 @@ export function buildObstacle(kindId) {
         case "flooded_dip":
             // Muddy brown water filling a dip: opaque, so nothing below the surface can be seen; churned mud round it.
             g.add(water(9, 7, { color: "#7c6646", opacity: 1, edge: "#86714f", muddy: true }, 14, 0.05));
+            g.add(sunkenPost());
             break;
         case "dry_ditch":
             g.add(ditch(r));
@@ -812,6 +814,27 @@ export function buildObstacle(kindId) {
             g.add(berm());
             break;
     }
+    return g;
+}
+/**
+ * Depth cue for the flooded dip (Nov 5, 2026, after the colleague pilot: testers took it for the shallow puddles the
+ * UGVs drive through). An old fence post stands in the water off the wheel line with only its top half-metre showing,
+ * so the water is plainly deeper than a puddle without saying so. The opaque water hides the rest of the post.
+ */
+function sunkenPost() {
+    const g = new THREE.Group();
+    const post = mesh(new THREE.BoxGeometry(0.17, 1.1, 0.17), std("#5e4e3b"));
+    post.position.set(0, 0, 0);
+    const cap = mesh(new THREE.BoxGeometry(0.18, 0.05, 0.18), std("#9c8b70"), false);
+    cap.position.set(0, 0.56, 0);
+    const lean = new THREE.Group();
+    lean.add(post, cap);
+    lean.rotation.set(0.1, 0, -0.14);
+    lean.position.set(1.0, 0, 2.5); // top about 0.55 m above the surface (y 0.05)
+    const ring = mesh(new THREE.RingGeometry(0.16, 0.24, 20), new THREE.MeshBasicMaterial({ color: "#a08962", transparent: true, opacity: 0.6, depthWrite: false }), false);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(1.0, 0.065, 2.5);
+    g.add(lean, ring);
     return g;
 }
 /** Section line: a row of marker stakes with red and white flags across the track. */

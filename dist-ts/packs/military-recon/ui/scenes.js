@@ -318,6 +318,8 @@ const OBJECTS = {
       <path d="M${l1 - 34} 129 Q 160 118 ${r1 + 34} 129 Q ${r2 + 44} 158 ${r2 + 24} 176 Q 160 188 ${l2 - 24} 176 Q ${l2 - 44} 158 ${l1 - 34} 129 Z" fill="url(#rc-mud)"/>
       <path d="M${l1 - 26} 131 Q 160 121 ${r1 + 26} 131 Q ${r1 + 30} 137 ${r1 + 18} 139 Q 160 131 ${l1 - 18} 139 Q ${l1 - 30} 137 ${l1 - 26} 131 Z" fill="#cfc8b4" opacity="0.3"/>
       <path d="M${l1 - 10} 146 q 26 -4 52 0 M${r1 - 34} 153 q 22 -3 44 0 M${l2 + 20} 165 q 36 -5 72 0 M${l2 + 116} 170 q 22 -3 40 0" stroke="#a48b63" stroke-width="1.1" fill="none" opacity="0.7"/>
+      <path d="M${l1 - 34} 129 Q 160 118 ${r1 + 34} 129 Q ${r2 + 44} 158 ${r2 + 24} 176 Q 160 188 ${l2 - 24} 176 Q ${l2 - 44} 158 ${l1 - 34} 129 Z" fill="#3e2f1c" opacity="0.18"/>
+      <g transform="rotate(-7 204 160)"><rect x="202.2" y="148.5" width="3.6" height="11.5" fill="#5e4e3b"/><rect x="202" y="148" width="4" height="1.4" fill="#9c8b70"/></g>
       <ellipse cx="204" cy="160" rx="10" ry="2" fill="none" stroke="#a08962" stroke-width="0.9" opacity="0.7"/>
       <ellipse cx="126" cy="150" rx="7" ry="1.5" fill="none" stroke="#a08962" stroke-width="0.8" opacity="0.7"/>
       ${ruts}`;

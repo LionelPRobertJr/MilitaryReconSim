@@ -194,7 +194,7 @@ const OBSTACLE_SOLIDS = {
     small_debris: { halfWidth: 0.3, depth: 0.3, height: 0, topScale: 1, color: "#6b6152", dark: "", light: "" },
     shallow_water: { halfWidth: 0.42, depth: 0.35, height: 0, topScale: 1, color: "#8fb7c6", dark: "", light: "" },
     light_brush: { halfWidth: 0.4, depth: 0.4, height: 0, topScale: 1, color: "#6d8746", dark: "", light: "" },
-    flooded_dip: { halfWidth: 0.5, depth: 0.45, height: 0, topScale: 1, color: "#9a7650", dark: "", light: "" },
+    flooded_dip: { halfWidth: 0.5, depth: 0.45, height: 0, topScale: 1, color: "#84643f", dark: "", light: "" },
     gravel_ford: { halfWidth: 0.6, depth: 0.3, height: 0, topScale: 1, color: "#8ab8c8", dark: "", light: "" },
     low_berm: { halfWidth: 0.6, depth: 0.2, height: 0.04, topScale: 0.6, color: "#c3ba7c", dark: "#a99f62", light: "#d3cb92" },
     fallen_sapling: { halfWidth: 0.52, depth: 0.05, height: 0.01, topScale: 1, color: "#8a6c4c", dark: "#6a5038", light: "#a08060" },
@@ -424,8 +424,16 @@ export class CameraFeed2D {
         if ([nearL, nearR, farL, farR].some((c) => c.f <= F_NEAR))
             return "";
         const poly = (cs, fill, extra = "") => `<polygon points="${cs.map((c) => `${f1(c.x)},${f1(c.y)}`).join(" ")}" fill="${fill}"${extra}/>`;
-        if (spec.height <= 0)
-            return poly([nearL, nearR, farR, farL], spec.color, ' opacity="0.9"');
+        if (spec.height <= 0) {
+            let flat = poly([nearL, nearR, farR, farL], spec.color, ' opacity="0.9"');
+            if (ev.kindId === "flooded_dip") {
+                // The sunken fence post (Nov 5, 2026): its top half-metre shows above the water, off the wheel line.
+                const b = corner(0.03, w * 0.55, 0), t = corner(0.03, w * 0.55, 0.09);
+                const pw = Math.max(1, (FX * 0.03) / Math.max(F_NEAR, b.f));
+                flat += `<line x1="${f1(b.x)}" y1="${f1(b.y)}" x2="${f1(t.x + pw * 0.4)}" y2="${f1(t.y)}" stroke="#5e4e3b" stroke-width="${f1(pw)}"/>`;
+            }
+            return flat;
+        }
         const h = spec.height;
         const tNL = corner(-d, -w * spec.topScale, h), tNR = corner(-d, w * spec.topScale, h), tFL = corner(d, -w * spec.topScale, h), tFR = corner(d, w * spec.topScale, h);
         let out = poly([corner(-d - 0.05, -w - 0.05, 0), corner(-d - 0.05, w + 0.05, 0), corner(d + 0.15, w + 0.12, 0), corner(d + 0.15, -w - 0.12, 0)], "#1e1a12", ' opacity="0.28"');
