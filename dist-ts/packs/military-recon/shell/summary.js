@@ -25,8 +25,10 @@ export function reconSessionSummary({ events, missionSummary, deployment }) {
                 items[k] = Number(v);
         const sub = (s) => mean(TEAM_ADAPT_ITEMS.filter((i) => i.subscale === s && i.id in items).map((i) => items[i.id]));
         const ta = TEAM_ADAPT_ITEMS.filter((i) => i.id in items).map((i) => items[i.id]);
+        // Complete when every item the probe asked was answered (logged per page; 9 in sessions before Nov 5, 2026).
+        const asked = pages[0].itemsShown ?? TEAM_ADAPT_ITEMS.length;
         return {
-            adaptabilityMean: ta.length === TEAM_ADAPT_ITEMS.length ? mean(ta) : null,
+            adaptabilityMean: ta.length === asked ? mean(ta) : null,
             adaptabilityItems: ta.length,
             create: sub("create"),
             uncertain: sub("uncertain"),

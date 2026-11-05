@@ -96,20 +96,31 @@ export const PROBE_CONFIDENCE = {
     anchors: ["Not at all confident", "Completely confident"]
 };
 export const CONFIDENCE_IS_PLACEHOLDER = true;
-/** One probe = three pages, as in the TeamAdapt-1 document; the confidence item ends the last page. */
+/**
+ * Which TeamAdapt-1 pages the check-ins show. Nov 5, 2026 (researcher decision, after the colleague pilot): the Create
+ * page (solving problems with no easy answers, new ideas, innovative ways) is left out for now. The platform is meant
+ * to study human-AI teaming on novel and creative problems, but those measures are not yet fully adapted to this
+ * task, and testers found the items did not fit it. The items stay defined above so the page can be put back by
+ * adding "create" here.
+ */
+export const TEAM_ADAPT_PAGES_SHOWN = ["uncertain", "stress"];
+export const TEAM_ADAPT_ITEMS_SHOWN = TEAM_ADAPT_ITEMS.filter((i) => TEAM_ADAPT_PAGES_SHOWN.includes(i.subscale));
+/** One probe = one page per TeamAdapt-1 subscale shown, in the document's order; the confidence item ends the last page. */
 export function probePages(probe) {
-    const parts = ["create", "uncertain", "stress"];
+    const parts = TEAM_ADAPT_PAGES_SHOWN;
+    const n = parts.length;
     return parts.map((part, i) => ({
         id: `${probe}_${part}`,
-        kicker: `Mission paused · mission time is not running · page ${i + 1} of 3`,
+        kicker: `Mission paused · mission time is not running · page ${i + 1} of ${n}`,
         title: probe === "probe_1" ? "Check-in after Section A" : "Check-in after Section B",
         // "Team" = the participant and both UGVs, on every page (research team decision, Oct 10, 2026: playtesters
         // were unsure whether the robots count as part of the team).
         intro: [i === 0 ? "In these questions, “your team” means you and your two robots, UGV #1 and UGV #2, working together. Think about how your team has done so far." : "As before, “your team” means you and your two robots, UGV #1 and UGV #2."],
         eventType: "probe_response",
-        logFields: { probe, part },
-        submitLabel: i < 2 ? "Next" : "Continue the mission",
-        items: [...TEAM_ADAPT_ITEMS.filter((x) => x.subscale === part).map(teamAdaptItem), ...(i === 2 ? [PROBE_CONFIDENCE] : [])]
+        // itemsShown: how many TeamAdapt items this probe asks in all, so the analysis knows when a probe is complete.
+        logFields: { probe, part, itemsShown: TEAM_ADAPT_ITEMS_SHOWN.length },
+        submitLabel: i < n - 1 ? "Next" : "Continue the mission",
+        items: [...TEAM_ADAPT_ITEMS.filter((x) => x.subscale === part).map(teamAdaptItem), ...(i === n - 1 ? [PROBE_CONFIDENCE] : [])]
     }));
 }
 /** NASA-TLX (raw) with the second attention check placed among the scales. */

@@ -170,9 +170,10 @@ export const EVENT_KINDS = [
         plural: "tall reeds",
         withArticle: "tall reeds",
         object: "reed bed",
-        heightFact: "the stems are thin and bend, but they stand taller than the vehicle",
-        appearance: "Tall, dense reeds fill the track and grow higher than the vehicle; the ground among them cannot be seen.",
-        cardText: "Tall, dense reeds filling the track, higher than the vehicle; the ground cannot be seen."
+        // Nov 5, 2026: about the vehicle's height (were taller than it); see the reeds model.
+        heightFact: "the stems are thin and bend, and stand about as tall as the vehicle",
+        appearance: "Reeds about as tall as the vehicle grow across the track; the ground among them is hard to see.",
+        cardText: "Reeds about as tall as the vehicle growing across the track; the ground among them is hard to see."
     },
     {
         id: "smoke_drift",

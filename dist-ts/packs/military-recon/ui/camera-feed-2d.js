@@ -198,7 +198,7 @@ const OBSTACLE_SOLIDS = {
     gravel_ford: { halfWidth: 0.6, depth: 0.3, height: 0, topScale: 1, color: "#8ab8c8", dark: "", light: "" },
     low_berm: { halfWidth: 0.6, depth: 0.2, height: 0.04, topScale: 0.6, color: "#c3ba7c", dark: "#a99f62", light: "#d3cb92" },
     fallen_sapling: { halfWidth: 0.52, depth: 0.05, height: 0.01, topScale: 1, color: "#8a6c4c", dark: "#6a5038", light: "#a08060" },
-    tall_reeds: { halfWidth: 0.6, depth: 0.5, height: 0.25, topScale: 1, color: "#a59d58", dark: "#8d8a4a", light: "#b8ae68" },
+    tall_reeds: { halfWidth: 0.6, depth: 0.5, height: 0.2, topScale: 1, color: "#9aa258", dark: "#87914a", light: "#aeae66" },
     smoke_drift: { halfWidth: 0.7, depth: 0.6, height: 0.4, topScale: 0.8, color: "#a7a6a0", dark: "#8a8984", light: "#c4c3be" }
 };
 export class CameraFeed2D {

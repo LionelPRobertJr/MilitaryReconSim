@@ -246,13 +246,13 @@ const OBJECTS = {
         let stems = "";
         for (let i = 0; i < 120; i++) {
             const x = 20 + ((i * 53) % 281);
-            const top = 60 + ((i * 37) % 30);
+            const top = 96 + ((i * 37) % 24); // about the vehicle's height (Nov 5, 2026; was 60-90)
             const lean = ((i * 17) % 9) - 4;
-            stems += `<path d="M${x} 172 Q ${x + lean} ${(172 + top) / 2} ${x + lean * 2} ${top}" stroke="${["#a59d58", "#b8ae68", "#8d8a4a", "#7c8645"][i % 4]}" stroke-width="2" fill="none"/>`;
+            stems += `<path d="M${x} 172 Q ${x + lean} ${(172 + top) / 2} ${x + lean * 2} ${top}" stroke="${["#9aa258", "#aeae66", "#87914a", "#7c8645"][i % 4]}" stroke-width="2" fill="none"/>`;
             if (i % 4 === 0)
                 stems += `<rect x="${x + lean * 2 - 1.6}" y="${top - 8}" width="3.2" height="9" rx="1.5" fill="#6a4a2c"/>`;
         }
-        return `<rect x="10" y="110" width="300" height="64" fill="#6e6a3c"/>${stems}`;
+        return `<rect x="10" y="134" width="300" height="40" fill="#6a6d3c"/>${stems}`;
     },
     small_debris_b: () => stones(22, 128, 184, 2.6, "#6b5a44", 11) +
         `<path d="M112 160 l20 -5 M178 150 l18 4 M140 176 l22 -2 M200 172 l16 -6" stroke="#5a4029" stroke-width="1.8" stroke-linecap="round"/>

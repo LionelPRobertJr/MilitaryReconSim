@@ -500,6 +500,9 @@ function sapling(r) {
  * UGV pushes through", but the stems stand taller than the vehicle and hide the ground among them.
  */
 function reeds(r) {
+    // Nov 5, 2026 (colleague pilot: every tester caught the reeds, 7 of 7): about the vehicle's height (1.3-1.9 m, was
+    // 2.4-3.7 m) and greener, so they no longer read as a wall the vehicle obviously cannot pass, and look closer to the
+    // brush it drives through. The danger stays hidden: the dense base still hides the ground among the stems.
     const g = new THREE.Group();
     const stemGeo = new THREE.ConeGeometry(0.035, 1, 4);
     stemGeo.translate(0, 0.5, 0);
@@ -511,7 +514,7 @@ function reeds(r) {
     const pos = new THREE.Vector3();
     const sc = new THREE.Vector3();
     const col = new THREE.Color();
-    const palette = ["#a59d58", "#b8ae68", "#8d8a4a", "#7c8645", "#c2b77a"];
+    const palette = ["#9aa258", "#aeae66", "#87914a", "#7c8645", "#b6b276"];
     for (let i = 0; i < n; i++) {
         const depth = 7;
         const x = (r() - 0.5) * depth;
@@ -521,7 +524,7 @@ function reeds(r) {
         pos.set(x, 0, (r() - 0.5) * 15);
         e.set((r() - 0.5) * 0.35, r() * Math.PI, (r() - 0.5) * 0.35);
         q.setFromEuler(e);
-        const h = 2.4 + r() * 1.3;
+        const h = 1.3 + r() * 0.6;
         sc.set(0.8 + r() * 0.6, h, 0.8 + r() * 0.6);
         m4.compose(pos, q, sc);
         stems.setMatrixAt(i, m4);
@@ -531,9 +534,9 @@ function reeds(r) {
     g.add(tag(stems, "solid"));
     // Brown seed heads on the tallest stems.
     const headGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.32, 5);
-    const heads = new THREE.InstancedMesh(headGeo, std("#6a4a2c"), 220);
-    for (let i = 0; i < 220; i++) {
-        pos.set((r() - 0.5) * 6, 2.9 + r() * 0.8, (r() - 0.5) * 14);
+    const heads = new THREE.InstancedMesh(headGeo, std("#6a4a2c"), 90); // fewer since Nov 5, 2026 (were 220)
+    for (let i = 0; i < 90; i++) {
+        pos.set((r() - 0.5) * 6, 1.55 + r() * 0.4, (r() - 0.5) * 14);
         e.set((r() - 0.5) * 0.4, 0, (r() - 0.5) * 0.4);
         q.setFromEuler(e);
         m4.compose(pos, q, sc.set(1, 1, 1));
@@ -541,8 +544,8 @@ function reeds(r) {
     }
     g.add(tag(heads, "solid"));
     // A darker, dense base so no ground shows between the stems.
-    const base = mesh(new THREE.BoxGeometry(5.0, 0.8, 14), std("#5d5a32"), false);
-    base.position.y = 0.4;
+    const base = mesh(new THREE.BoxGeometry(5.0, 0.6, 14), std("#5a5d32"), false);
+    base.position.y = 0.3;
     g.add(tag(base, "solid"));
     return g;
 }
